@@ -1,0 +1,64 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Build artifacts
+dist/
+build/
+coverage/
+.tmp/
+.cache/
+.out/
+.next/
+*.tsbuildinfo
+
+# Sequelize CLI logs
+sequelize.log
+
+# macOS system files
+.DS_Store
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.swp
+
+# AWS / Docker related
+.aws/
+.dockerignore
+docker-compose.override.yml
+docker-compose*.yaml
+docker-compose*.yml
+Dockerfile
+*.pem
+
+# Local database files
+*.sqlite
+*.sqlite3
+
+# Test coverage / snapshots
+coverage/
+__tests__/coverage/
+*.lcov
+*.snap
+
+# PM2 / process managers
+pm2-logs/
+.pids/
