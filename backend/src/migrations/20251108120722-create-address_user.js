@@ -47,6 +47,14 @@ module.exports = {
         type: Sequelize.STRING(20),
         allowNull: false,
       },
+      latitude: {
+        type: Sequelize.DECIMAL(10, 7),
+        allowNull: false,
+      },
+      longitude: {
+        type: Sequelize.DECIMAL(10, 7),
+        allowNull: false,
+      },
       is_default: {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
@@ -62,6 +70,7 @@ module.exports = {
         ),
       },
     });
+
     await queryInterface.addConstraint("address_user", {
       fields: ["user_id"],
       type: "unique",

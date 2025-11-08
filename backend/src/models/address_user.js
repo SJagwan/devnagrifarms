@@ -21,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       address_type: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.STRING(16),
         allowNull: false,
       },
       address_line_1: {
@@ -49,26 +49,24 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(20),
         allowNull: false,
       },
+      latitude: {
+        type: DataTypes.DECIMAL(10, 7),
+        allowNull: false,
+      },
+      longitude: {
+        type: DataTypes.DECIMAL(10, 7),
+        allowNull: false,
+      },
       is_default: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
-      },
-      created_at: {
-        type: DataTypes.DATE,
-        defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
-      },
-      updated_at: {
-        type: DataTypes.DATE,
-        defaultValue: sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
-        ),
       },
     },
     {
       sequelize,
       modelName: "AddressUser",
       tableName: "address_user",
-      timestamps: false,
+      timestamps: true,
       underscored: true,
     }
   );
