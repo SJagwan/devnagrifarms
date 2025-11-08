@@ -56,11 +56,6 @@ module.exports = {
         allowNull: true,
         comment: "Discount percentage applied to price",
       },
-      stock: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
-      },
       min_order_qty: {
         type: Sequelize.INTEGER,
         allowNull: false,

@@ -8,6 +8,16 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "product_id",
         as: "product",
       });
+
+      ProductVariant.hasMany(models.Inventory, {
+        foreignKey: "product_variant_id",
+        as: "inventory",
+      });
+
+      ProductVariant.hasMany(models.ProductVariantImage, {
+        foreignKey: "product_variant_id",
+        as: "images",
+      });
     }
   }
 
@@ -61,11 +71,6 @@ module.exports = (sequelize, DataTypes) => {
       discount_percent: {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: true,
-      },
-      stock: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
       },
       min_order_qty: {
         type: DataTypes.INTEGER,
