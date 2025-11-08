@@ -20,6 +20,12 @@ module.exports = {
       category_id: {
         type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: "categories",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
       default_tax: {
         type: Sequelize.DECIMAL(5, 2),

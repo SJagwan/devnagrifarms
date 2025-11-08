@@ -18,10 +18,17 @@ const PAYMENT_STATUS = {
 module.exports = (sequelize, DataTypes) => {
   class Order extends Model {
     static associate(models) {
-      Order.belongsTo(models.User, { foreignKey: "user_id", as: "user" });
+      Order.belongsTo(models.User, {
+        foreignKey: "user_id",
+        as: "user",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+      });
       Order.hasMany(models.OrderItem, { foreignKey: "order_id", as: "items" });
       Order.belongsTo(models.Subscription, {
         foreignKey: "subscription_id",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
         as: "subscription",
       });
     }

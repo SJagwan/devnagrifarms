@@ -12,10 +12,22 @@ module.exports = {
       order_id: {
         type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: "orders",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
       product_variant_id: {
         type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: "product_variants",
+          key: "id",
+        },
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
       },
       quantity: {
         type: Sequelize.DECIMAL(10, 2),

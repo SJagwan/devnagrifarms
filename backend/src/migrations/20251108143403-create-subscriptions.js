@@ -12,6 +12,12 @@ module.exports = {
       user_id: {
         type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: "users",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
       subscription_name: {
         type: Sequelize.STRING(100),
@@ -62,19 +68,6 @@ module.exports = {
           "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
         ),
       },
-    });
-
-    // Foreign key constraint
-    await queryInterface.addConstraint("subscriptions", {
-      fields: ["user_id"],
-      type: "foreign key",
-      name: "fk_subscriptions_user",
-      references: {
-        table: "users",
-        field: "id",
-      },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
     });
   },
 

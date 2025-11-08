@@ -6,10 +6,14 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       OrderItem.belongsTo(models.Order, {
         foreignKey: "order_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
         as: "order",
       });
       OrderItem.belongsTo(models.ProductVariant, {
         foreignKey: "product_variant_id",
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
         as: "variant",
       });
     }

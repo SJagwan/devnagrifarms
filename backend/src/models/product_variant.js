@@ -6,6 +6,8 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       ProductVariant.belongsTo(models.Product, {
         foreignKey: "product_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
         as: "product",
       });
 

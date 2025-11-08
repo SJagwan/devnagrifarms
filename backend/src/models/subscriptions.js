@@ -20,6 +20,8 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       Subscription.belongsTo(models.User, {
         foreignKey: "user_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
         as: "user",
       });
       Subscription.hasMany(models.SubscriptionItem, {

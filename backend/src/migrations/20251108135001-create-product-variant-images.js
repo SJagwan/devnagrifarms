@@ -12,6 +12,12 @@ module.exports = {
       product_variant_id: {
         type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: "product_variants",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
       url: {
         type: Sequelize.STRING(255),

@@ -12,10 +12,22 @@ module.exports = {
       user_id: {
         type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: "users",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
       subscription_id: {
         type: Sequelize.UUID,
         allowNull: true,
+        references: {
+          model: "subscriptions",
+          key: "id",
+        },
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
       },
       total_price: {
         type: Sequelize.DECIMAL(10, 2),

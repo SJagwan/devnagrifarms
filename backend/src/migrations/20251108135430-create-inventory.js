@@ -12,6 +12,12 @@ module.exports = {
       product_variant_id: {
         type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: "product_variants",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
       warehouse: {
         type: Sequelize.ENUM("warehouse_1", "warehouse_2"),

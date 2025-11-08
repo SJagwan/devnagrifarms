@@ -12,6 +12,12 @@ module.exports = {
       product_id: {
         type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: "products",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
       sku: {
         type: Sequelize.STRING(50),

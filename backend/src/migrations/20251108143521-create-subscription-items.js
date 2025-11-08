@@ -12,10 +12,22 @@ module.exports = {
       subscription_id: {
         type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: "subscriptions",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
       },
       product_variant_id: {
         type: Sequelize.UUID,
         allowNull: false,
+        references: {
+          model: "product_variants",
+          key: "id",
+        },
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
       },
       quantity: {
         type: Sequelize.DECIMAL(10, 2),
@@ -40,30 +52,6 @@ module.exports = {
           "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
         ),
       },
-    });
-
-    await queryInterface.addConstraint("subscription_items", {
-      fields: ["subscription_id"],
-      type: "foreign key",
-      name: "fk_subscription_items_subscription",
-      references: {
-        table: "subscriptions",
-        field: "id",
-      },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
-    });
-
-    await queryInterface.addConstraint("subscription_items", {
-      fields: ["product_variant_id"],
-      type: "foreign key",
-      name: "fk_subscription_items_variant",
-      references: {
-        table: "product_variants",
-        field: "id",
-      },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
     });
   },
 
