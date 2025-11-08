@@ -1,9 +1,9 @@
-import express from "express";
-import cors from "cors";
-import morgan from "morgan";
-import routes from "./routes/index.js";
-import logger from "./config/logger.js";
-import errorHandler from "./middlewares/errorHandler.js";
+const express = require("express");
+const cors = require("cors");
+const morgan = require("morgan");
+const routes = require("./routes/index");
+const logger = require("./config/logger");
+const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();
 
@@ -16,13 +16,16 @@ if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
 
+// Logging middleware
 app.use((req, res, next) => {
   logger.info(`${req.method} ${req.originalUrl}`);
   next();
 });
 
+// API routes
 app.use("/api", routes);
 
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     status: "fail",
@@ -30,6 +33,7 @@ app.use((req, res) => {
   });
 });
 
+// Global error handler
 app.use(errorHandler);
 
-export default app;
+module.exports = app;
