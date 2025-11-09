@@ -22,7 +22,7 @@ module.exports = {
         allowNull: false,
         unique: true,
       },
-      is_phone_verified_at: {
+      phone_verified_at: {
         type: Sequelize.DATE,
         allowNull: true,
       },
@@ -30,7 +30,7 @@ module.exports = {
         type: Sequelize.STRING(100),
         allowNull: true,
       },
-      is_email_verified_at: {
+      email_verified_at: {
         type: Sequelize.DATE,
         allowNull: true,
       },

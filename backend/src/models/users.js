@@ -31,6 +31,12 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "user_id",
         as: "orders",
       });
+
+      User.hasMany(models.RefreshToken, {
+        foreignKey: "user_id",
+        as: "refreshTokens",
+        onDelete: "CASCADE",
+      });
     }
   }
 
@@ -71,11 +77,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM(...Object.values(USER_STATUS)),
         defaultValue: USER_STATUS.ACTIVE,
       },
-      is_email_verified_at: {
+      email_verified_at: {
         type: DataTypes.DATE,
         allowNull: true,
       },
-      is_phone_verified_at: {
+      phone_verified_at: {
         type: DataTypes.DATE,
         allowNull: true,
       },
