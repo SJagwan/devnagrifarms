@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 const menuItems = [
   { icon: "📊", label: "Dashboard", path: "/" },
   { icon: "📂", label: "Categories", path: "/categories" },
-  { icon: "🥬", label: "Add Product", path: "/products/add" },
+  { icon: "🛒", label: "Products", path: "/products" },
 ];
 
 export default function Sidebar({ isOpen, toggleSidebar }) {

@@ -1,10 +1,45 @@
 const { ProductVariant, ProductVariantImage } = require("../models");
+const { Op } = require("sequelize");
 
 const getVariantsByProductId = async (productId) => {
   return await ProductVariant.findAll({
     where: { product_id: productId },
     include: [{ model: ProductVariantImage, as: "images" }],
   });
+};
+
+const getVariantsByProductIdPaged = async (
+  productId,
+  { page, limit, search, sortBy, sortDir = "ASC", is_active, unit }
+) => {
+  const where = { product_id: productId };
+  if (typeof is_active !== "undefined") {
+    where.is_active = is_active;
+  }
+  if (unit) {
+    where.unit = unit;
+  }
+  if (search) {
+    const like = { [Op.like]: `%${search}%` };
+    where[Op.or] = [{ sku: like }, { type: like }, { unit: like }];
+  }
+
+  const sortable = ["sku", "price", "quantity", "mrp", "is_active"];
+  let order = [["created_at", "DESC"]];
+  if (sortBy && sortable.includes(sortBy)) {
+    order = [[sortBy, sortDir === "DESC" ? "DESC" : "ASC"]];
+  }
+
+  const offset = (page - 1) * limit;
+  const { rows, count } = await ProductVariant.findAndCountAll({
+    where,
+    include: [{ model: ProductVariantImage, as: "images" }],
+    limit,
+    offset,
+    order,
+  });
+
+  return { rows, count };
 };
 
 const getVariantById = async (id) => {
@@ -47,6 +82,7 @@ const deleteVariantImage = async (imageId) => {
 
 module.exports = {
   getVariantsByProductId,
+  getVariantsByProductIdPaged,
   getVariantById,
   createVariant,
   updateVariant,

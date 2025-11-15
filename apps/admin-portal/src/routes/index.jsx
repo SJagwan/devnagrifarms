@@ -1,6 +1,8 @@
 import Dashboard from "../pages/Dashboard";
 import Categories from "../pages/Categories";
-import AddProduct from "../pages/AddProduct";
+import Products from "../pages/Products";
+import ProductEdit from "../pages/ProductEdit";
+import ProductVariants from "../pages/ProductVariants";
 
 export const protectedRoutes = [
   {
@@ -12,7 +14,15 @@ export const protectedRoutes = [
     element: Categories,
   },
   {
-    path: "/products/add",
-    element: AddProduct,
+    path: "/products",
+    element: Products,
+  },
+  {
+    path: "/products/:id/edit",
+    element: ProductEdit,
+  },
+  {
+    path: "/products/:id/variants",
+    element: ProductVariants,
   },
 ];

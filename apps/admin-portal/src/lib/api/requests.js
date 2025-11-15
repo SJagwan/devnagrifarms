@@ -21,19 +21,35 @@ export const adminAPI = {
       meta: { successMessage: "Category deleted" },
     }),
 
-  //   // Products
-  //   getProducts: (params = {}) => api.get("/admin/products", { params }),
-  //   getProduct: (id) => api.get(`/admin/products/${id}`),
-  //   createProduct: (payload) =>
-  //     api.post("/admin/products", payload, {
-  //       meta: { successMessage: "Product created" },
-  //     }),
-  //   updateProduct: (id, payload) =>
-  //     api.put(`/admin/products/${id}`, payload, {
-  //       meta: { successMessage: "Product updated" },
-  //     }),
-  //   deleteProduct: (id) =>
-  //     api.delete(`/admin/products/${id}`, {
-  //       meta: { successMessage: "Product deleted" },
-  //     }),
+  // Products
+  getProducts: (params = {}) => api.get("/admin/products", { params }),
+  getProduct: (id) => api.get(`/admin/products/${id}`),
+  createProduct: (payload) =>
+    api.post("/admin/products", payload, {
+      meta: { successMessage: "Product created" },
+    }),
+  updateProduct: (id, payload) =>
+    api.put(`/admin/products/${id}`, payload, {
+      meta: { successMessage: "Product updated" },
+    }),
+  deleteProduct: (id) =>
+    api.delete(`/admin/products/${id}`, {
+      meta: { successMessage: "Product deleted" },
+    }),
+
+  // Product variants
+  getProductVariants: (productId, params = {}) =>
+    api.get(`/admin/products/${productId}/variants`, { params }),
+  createProductVariant: (productId, payload) =>
+    api.post(`/admin/products/${productId}/variants`, payload, {
+      meta: { successMessage: "Variant created" },
+    }),
+  updateProductVariant: (productId, variantId, payload) =>
+    api.put(`/admin/products/${productId}/variants/${variantId}`, payload, {
+      meta: { successMessage: "Variant updated" },
+    }),
+  deleteProductVariant: (productId, variantId) =>
+    api.delete(`/admin/products/${productId}/variants/${variantId}`, {
+      meta: { successMessage: "Variant deleted" },
+    }),
 };

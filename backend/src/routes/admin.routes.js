@@ -34,4 +34,16 @@ router.post("/products", productController.createProduct);
 router.put("/products/:id", productController.updateProduct);
 router.delete("/products/:id", productController.deleteProduct);
 
+// Product variants
+router.get("/products/:id/variants", productController.listVariants);
+router.post("/products/:id/variants", productController.addVariant);
+router.put(
+  "/products/:id/variants/:variantId",
+  productController.updateVariant
+);
+router.delete(
+  "/products/:id/variants/:variantId",
+  productController.deleteVariant
+);
+
 module.exports = router;
