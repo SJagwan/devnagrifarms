@@ -1,0 +1,97 @@
+import { createContext, useContext, useState, useEffect } from "react";
+import api from "../lib/api/http";
+import {
+  setTokens,
+  setUser as storeUser,
+  getUser,
+  clearAuth,
+  getAccessToken,
+} from "../lib/auth";
+
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const hydrate = async () => {
+      try {
+        const token = getAccessToken();
+        const cached = getUser();
+        if (cached) setUser(cached);
+
+        if (token) {
+          const { data } = await api.get("/auth/me");
+          if (!mounted) return;
+          storeUser(data.user);
+          setUser(data.user);
+        }
+      } catch (e) {
+        clearAuth();
+        if (mounted) setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    hydrate();
+
+    // Cross-tab auth sync
+    const onStorage = (e) => {
+      if (e.key === "accessToken" || e.key === "user") {
+        const u = getUser();
+        setUser(u);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  const login = async (email, password) => {
+    try {
+      const { data } = await api.post("/auth/login", { email, password });
+
+      // Store tokens and user data
+      setTokens({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+      });
+      storeUser(data.user);
+      setUser(data.user);
+      return { success: true };
+    } catch (error) {
+      const message = error?.message || "Login failed";
+      return { success: false, error: message };
+    }
+  };
+
+  const logout = () => {
+    clearAuth();
+    setUser(null);
+  };
+
+  const value = {
+    user,
+    login,
+    logout,
+    loading,
+    isAuthenticated: !!user,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
