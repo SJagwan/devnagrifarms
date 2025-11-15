@@ -9,7 +9,7 @@ import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
 import Login from "./pages/Login";
 import MainLayout from "./components/layout/MainLayout";
-import Dashboard from "./pages/Dashboard";
+import { protectedRoutes } from "./routes";
 import "./App.css";
 
 function App() {
@@ -21,17 +21,19 @@ function App() {
           {/* Public Route */}
           <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes */}
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <MainLayout>
-                  <Dashboard />
-                </MainLayout>
-              </PrivateRoute>
-            }
-          />
+          {protectedRoutes.map((route) => (
+            <Route
+              key={route.path}
+              path={route.path}
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <route.element />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+          ))}
 
           {/* Redirect any unknown routes to dashboard */}
           <Route path="*" element={<Navigate to="/" replace />} />
