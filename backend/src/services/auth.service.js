@@ -1,11 +1,13 @@
-const { User, RefreshToken } = require("../models");
+const { RefreshToken } = require("../models");
+const bcrypt = require("bcrypt");
+
+const { findUserForAuth } = require("../repositories/user.repository");
+
 const {
   generateAccessToken,
   generateRefreshToken,
   hashToken,
-} = require("../utils/tokens.util");
-const bcrypt = require("bcryptjs");
-const { Op } = require("sequelize");
+} = require("../utils/token.util");
 
 const createTokens = async (userId, ipAddress = null) => {
   const accessToken = generateAccessToken(userId);
@@ -23,14 +25,23 @@ const createTokens = async (userId, ipAddress = null) => {
   return { accessToken, refreshToken };
 };
 
-const loginWithPassword = async (phone, password, ipAddress) => {
-  const user = await User.findOne({ where: { phone } });
+const loginWithPassword = async (email, password, user_type, ipAddress) => {
+  const user = await findUserForAuth(email, user_type);
+
   if (!user || !user.password_hash) throw new Error("Invalid credentials");
 
   const isValid = await bcrypt.compare(password, user.password_hash);
   if (!isValid) throw new Error("Invalid credentials");
 
-  return createTokens(user.id, ipAddress);
+  return {
+    ...(await createTokens(user.id, ipAddress)),
+    user: {
+      id: user.id,
+      email: user.email,
+      name: `${user.first_name} ${user.last_name}`.trim(),
+      userType: user.user_type,
+    },
+  };
 };
 
 const loginWithOTP = async (phone, otp, ipAddress) => {
@@ -68,9 +79,33 @@ const logoutUser = async (refreshToken) => {
   );
 };
 
+const getCurrentUser = async (userId) => {
+  const user = await User.findByPk(userId, {
+    attributes: [
+      "id",
+      "first_name",
+      "last_name",
+      "email",
+      "phone",
+      "userType",
+      "status",
+    ],
+  });
+  if (!user) throw new Error("User not found");
+  return {
+    id: user.id,
+    name: `${user.first_name} ${user.last_name}`.trim(),
+    email: user.email,
+    phone: user.phone,
+    userType: user.userType,
+    status: user.status,
+  };
+};
+
 module.exports = {
   loginWithPassword,
   loginWithOTP,
   refreshAccessToken,
   logoutUser,
+  getCurrentUser,
 };

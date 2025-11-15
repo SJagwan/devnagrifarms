@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import api from "../lib/api/http";
+import { authAPI } from "../lib/api/requests";
 import {
   setTokens,
   setUser as storeUser,
@@ -56,7 +56,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const { data } = await api.post("/auth/login", { email, password });
+      const { data } = await authAPI.login({
+        email,
+        password,
+        user_type: "admin",
+      });
 
       // Store tokens and user data
       setTokens({

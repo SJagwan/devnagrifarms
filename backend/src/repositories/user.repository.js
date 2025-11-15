@@ -39,7 +39,27 @@ const findUserByIdentifier = async (identifier, activeOnly = true) => {
   });
 };
 
+const findUserForAuth = async (email, userType = null) => {
+  const where = { email };
+  if (userType) where.user_type = userType;
+
+  return await User.findOne({
+    where,
+    attributes: [
+      "id",
+      "first_name",
+      "last_name",
+      "email",
+      "phone",
+      "password_hash",
+      "user_type",
+      "status",
+    ],
+  });
+};
+
 module.exports = {
   findUserById,
   findUserByIdentifier,
+  findUserForAuth,
 };

@@ -74,7 +74,5 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-  AddressUser.ADDRESS_TYPES = ADDRESS_TYPES;
-
   return AddressUser;
 };
