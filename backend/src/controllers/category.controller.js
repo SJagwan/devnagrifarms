@@ -2,8 +2,37 @@ const categoryService = require("../services/category.service");
 
 const getAllCategories = async (req, res) => {
   try {
-    const categories = await categoryService.getAllCategories();
-    return res.json({ success: true, data: categories });
+    const {
+      page = 1,
+      limit = 10,
+      q = "",
+      sortBy = "name",
+      sortDir = "ASC",
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 10));
+
+    const { rows, count } = await categoryService.getAllCategories({
+      page: pageNum,
+      limit: limitNum,
+      search: q,
+      sortBy,
+      sortDir,
+    });
+
+    const totalPages = Math.ceil(count / limitNum) || 1;
+
+    return res.json({
+      success: true,
+      data: rows,
+      meta: {
+        page: pageNum,
+        limit: limitNum,
+        total: count,
+        totalPages,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -38,6 +67,14 @@ const createCategory = async (req, res) => {
       data: category,
     });
   } catch (error) {
+    if (
+      error?.name === "SequelizeUniqueConstraintError" ||
+      error?.original?.code === "ER_DUP_ENTRY"
+    ) {
+      return res
+        .status(409)
+        .json({ success: false, message: "Category name already exists" });
+    }
     return res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -19,10 +19,13 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({ message: "User not found or inactive" });
     }
 
-    req.user = decoded;
+    req.user = {
+      id: user.id,
+      email: user.email,
+      userType: user.user_type,
+    };
     next();
   } catch (err) {
-    console.error("Auth error:", err);
     return res.status(401).json({ message: "Unauthorized" });
   }
 };

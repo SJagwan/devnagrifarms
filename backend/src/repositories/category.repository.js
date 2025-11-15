@@ -1,9 +1,39 @@
+const { Op } = require("sequelize");
 const { Category } = require("../models");
 
-const getAllCategories = async () => {
-  return await Category.findAll({
-    order: [["name", "ASC"]],
+const getAllCategories = async ({
+  page,
+  limit,
+  search,
+  sortBy,
+  sortDir,
+} = {}) => {
+  const allowedSort = ["name", "description", "created_at", "updated_at"];
+  const safeSortBy = allowedSort.includes(sortBy) ? sortBy : "name";
+  const safeSortDir =
+    sortDir && sortDir.toUpperCase() === "DESC" ? "DESC" : "ASC";
+
+  const where = {};
+  if (search) {
+    where[Op.or] = [
+      { name: { [Op.like]: `%${search}%` } },
+      { description: { [Op.like]: `%${search}%` } },
+    ];
+  }
+
+  const offset = (page - 1) * limit;
+
+  const result = await Category.findAndCountAll({
+    where,
+    order: [[safeSortBy, safeSortDir]],
+    limit,
+    offset,
   });
+
+  return {
+    rows: result.rows,
+    count: result.count,
+  };
 };
 
 const getCategoryById = async (id) => {

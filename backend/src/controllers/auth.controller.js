@@ -62,7 +62,7 @@ const logout = async (req, res) => {
 
 const getCurrentUser = async (req, res) => {
   try {
-    const user = await authService.getCurrentUser(req.user.userId);
+    const user = await authService.getCurrentUser(req.user.id);
     res.json({ success: true, user });
   } catch (error) {
     res.status(404).json({ success: false, message: error.message });
