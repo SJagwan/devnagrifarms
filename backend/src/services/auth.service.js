@@ -1,7 +1,10 @@
 const { RefreshToken } = require("../models");
 const bcrypt = require("bcrypt");
 
-const { findUserForAuth } = require("../repositories/user.repository");
+const {
+  findUserForAuth,
+  findUserById,
+} = require("../repositories/user.repository");
 
 const {
   generateAccessToken,
@@ -80,17 +83,7 @@ const logoutUser = async (refreshToken) => {
 };
 
 const getCurrentUser = async (userId) => {
-  const user = await User.findByPk(userId, {
-    attributes: [
-      "id",
-      "first_name",
-      "last_name",
-      "email",
-      "phone",
-      "userType",
-      "status",
-    ],
-  });
+  const user = await findUserById(userId);
   if (!user) throw new Error("User not found");
   return {
     id: user.id,

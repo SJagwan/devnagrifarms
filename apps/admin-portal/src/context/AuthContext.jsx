@@ -18,20 +18,28 @@ export const AuthProvider = ({ children }) => {
     let mounted = true;
 
     const hydrate = async () => {
-      try {
-        const token = getAccessToken();
-        const cached = getUser();
-        if (cached) setUser(cached);
+      const token = getAccessToken();
+      const cached = getUser();
+      if (cached) setUser(cached);
 
-        if (token) {
-          const { data } = await api.get("/auth/me");
-          if (!mounted) return;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data } = await authAPI.me();
+        if (!mounted) return;
+        if (data?.user) {
           storeUser(data.user);
           setUser(data.user);
         }
       } catch (e) {
-        clearAuth();
-        if (mounted) setUser(null);
+        const status = e?.response?.status;
+        if (status === 401 || status === 403) {
+          clearAuth();
+          if (mounted) setUser(null);
+        }
       } finally {
         if (mounted) setLoading(false);
       }

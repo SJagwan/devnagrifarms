@@ -28,7 +28,6 @@ export default function MainLayout({ children }) {
         }}
       >
         <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-
         <main className="p-4">{children}</main>
       </div>
     </div>
