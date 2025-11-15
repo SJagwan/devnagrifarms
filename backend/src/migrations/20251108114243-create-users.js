@@ -38,7 +38,7 @@ module.exports = {
         type: Sequelize.STRING(255),
         allowNull: true,
       },
-      userType: {
+      user_type: {
         type: Sequelize.ENUM("customer", "delivery", "admin"),
         defaultValue: "customer",
       },
@@ -66,7 +66,7 @@ module.exports = {
       },
     });
 
-    await queryInterface.addIndex("users", ["email", "is_email_verified_at"], {
+    await queryInterface.addIndex("users", ["email", "email_verified_at"], {
       unique: true,
       name: "users_verified_email_unique",
       where: {

@@ -69,7 +69,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(255),
         allowNull: true,
       },
-      userType: {
+      user_type: {
         type: DataTypes.ENUM(...Object.values(USER_TYPES)),
         defaultValue: USER_TYPES.CUSTOMER,
       },
