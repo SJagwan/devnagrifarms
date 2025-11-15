@@ -1,7 +1,7 @@
-import dotenv from "dotenv";
-import app from "./src/app.js";
-import logger from "./src/config/logger.js";
-import db from "./src/models/index.js";
+const dotenv = require("dotenv");
+const app = require("./src/app");
+const logger = require("./src/config/logger");
+const db = require("./src/models");
 const { sequelize } = db;
 
 dotenv.config();
