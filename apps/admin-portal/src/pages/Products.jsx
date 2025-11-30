@@ -15,6 +15,8 @@ export default function Products() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [originalFormData, setOriginalFormData] = useState(null);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -58,20 +60,55 @@ export default function Products() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleCreate = async (e) => {
+  const handleOpenCreate = () => {
+    setEditingProduct(null);
+    setOriginalFormData(null);
+    setForm({ name: "", description: "", category_id: "", default_tax: "0" });
+    setShowCreate(true);
+  };
+
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    const formData = {
+      name: product.name || "",
+      description: product.description || "",
+      category_id: product.category_id || product.category?.id || "",
+      default_tax: String(product.default_tax ?? "0"),
+    };
+    setForm(formData);
+    setOriginalFormData(formData);
+    setShowCreate(true);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await adminAPI.createProduct(form);
+      if (editingProduct) {
+        await adminAPI.updateProduct(editingProduct.id, form);
+      } else {
+        await adminAPI.createProduct(form);
+      }
       setForm({ name: "", description: "", category_id: "", default_tax: "0" });
       setShowCreate(false);
-
+      setEditingProduct(null);
+      setOriginalFormData(null);
       setQueryState((prev) => ({ ...prev, page: 1 }));
     } catch (e) {
-      console.error("Failed to create product", e);
+      console.error(
+        editingProduct
+          ? "Failed to update product"
+          : "Failed to create product",
+        e
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  const hasFormChanged = () => {
+    if (!editingProduct || !originalFormData) return true;
+    return JSON.stringify(form) !== JSON.stringify(originalFormData);
   };
 
   const columns = [
@@ -113,11 +150,7 @@ export default function Products() {
           >
             View Variants
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/products/${row.id}/edit`)}
-          >
+          <Button variant="outline" size="sm" onClick={() => handleEdit(row)}>
             Edit
           </Button>
         </div>
@@ -141,7 +174,7 @@ export default function Products() {
         title="Products"
         subtitle="Manage products and their variants"
         right={
-          <Button onClick={() => setShowCreate(true)} variant="primary">
+          <Button onClick={handleOpenCreate} variant="primary">
             + New Product
           </Button>
         }
@@ -159,11 +192,15 @@ export default function Products() {
 
       <Modal
         isOpen={showCreate}
-        onClose={() => setShowCreate(false)}
-        title="Create Product"
+        onClose={() => {
+          setShowCreate(false);
+          setEditingProduct(null);
+          setOriginalFormData(null);
+        }}
+        title={editingProduct ? "Edit Product" : "Create Product"}
         size="md"
       >
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <TextField
             label="Name"
             value={form.name}
@@ -210,13 +247,21 @@ export default function Products() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setShowCreate(false)}
+              onClick={() => {
+                setShowCreate(false);
+                setEditingProduct(null);
+                setOriginalFormData(null);
+              }}
               disabled={loading}
             >
               Cancel
             </Button>
-            <Button type="submit" isLoading={loading}>
-              Create
+            <Button
+              type="submit"
+              isLoading={loading}
+              disabled={!hasFormChanged()}
+            >
+              {editingProduct ? "Update" : "Create"}
             </Button>
           </div>
         </form>

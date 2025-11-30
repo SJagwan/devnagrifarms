@@ -25,6 +25,8 @@ export default function ProductVariants() {
   const [totalItems, setTotalItems] = useState(0);
 
   const [showVariantModal, setShowVariantModal] = useState(false);
+  const [editingVariant, setEditingVariant] = useState(null);
+  const [originalFormData, setOriginalFormData] = useState(null);
   const [variantForm, setVariantForm] = useState({
     sku: "",
     type: "",
@@ -62,6 +64,49 @@ export default function ProductVariants() {
     setVariantForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleOpenCreateVariant = () => {
+    setEditingVariant(null);
+    setOriginalFormData(null);
+    setVariantForm({
+      sku: "",
+      type: "",
+      source: "",
+      quantity: "1",
+      unit: "pcs",
+      bottle_option: "",
+      price: "",
+      mrp: "",
+      discount_percent: "",
+      min_order_qty: "1",
+      max_order_qty: "",
+      is_active: true,
+      images: [],
+    });
+    setShowVariantModal(true);
+  };
+
+  const handleEditVariant = (variant) => {
+    setEditingVariant(variant);
+    const formData = {
+      sku: variant.sku || "",
+      type: variant.type || "",
+      source: variant.source || "",
+      quantity: String(variant.quantity || "1"),
+      unit: variant.unit || "pcs",
+      bottle_option: variant.bottle_option || "",
+      price: String(variant.price || ""),
+      mrp: String(variant.mrp || ""),
+      discount_percent: String(variant.discount_percent || ""),
+      min_order_qty: String(variant.min_order_qty || "1"),
+      max_order_qty: String(variant.max_order_qty || ""),
+      is_active: variant.is_active ?? true,
+      images: variant.images?.map((img) => img.image_url) || [],
+    };
+    setVariantForm(formData);
+    setOriginalFormData(formData);
+    setShowVariantModal(true);
+  };
+
   // Server-side fetch applying query params (pagination, search, filters, sort)
   const fetchVariants = async (query) => {
     setLoading(true);
@@ -85,13 +130,21 @@ export default function ProductVariants() {
     }
   };
 
-  const handleCreateVariant = async (e) => {
+  const handleSubmitVariant = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       const payload = { ...variantForm };
-      await adminAPI.createProductVariant(id, payload);
+
+      if (editingVariant) {
+        await adminAPI.updateProductVariant(id, editingVariant.id, payload);
+      } else {
+        await adminAPI.createProductVariant(id, payload);
+      }
+
       setShowVariantModal(false);
+      setEditingVariant(null);
+      setOriginalFormData(null);
       setVariantForm({
         sku: "",
         type: "",
@@ -110,10 +163,22 @@ export default function ProductVariants() {
       loadProduct();
       fetchVariants(lastQuery);
     } catch (e) {
-      console.error("Failed to create variant", e);
+      console.error(
+        editingVariant
+          ? "Failed to update variant"
+          : "Failed to create variant",
+        e
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  // Check if form has changed (for edit mode)
+  const hasFormChanged = () => {
+    if (!editingVariant || !originalFormData) return true; // Allow submit for create mode
+
+    return JSON.stringify(variantForm) !== JSON.stringify(originalFormData);
   };
 
   const columns = [
@@ -170,6 +235,23 @@ export default function ProductVariants() {
         </span>
       ),
     },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (row) => (
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleEditVariant(row)}
+          >
+            Edit
+          </Button>
+        </div>
+      ),
+      headerClassName: "text-right",
+      className: "text-right",
+    },
   ];
 
   const filters = [
@@ -205,20 +287,9 @@ export default function ProductVariants() {
         title={`Variants: ${product?.name || "Product"}`}
         subtitle="All variants under this product"
         right={
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/products/${id}/edit`)}
-            >
-              Edit Product
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setShowVariantModal(true)}
-            >
-              + Add Variant
-            </Button>
-          </div>
+          <Button variant="secondary" onClick={handleOpenCreateVariant}>
+            + Add Variant
+          </Button>
         }
       />
 
@@ -239,11 +310,14 @@ export default function ProductVariants() {
 
       <Modal
         isOpen={showVariantModal}
-        onClose={() => setShowVariantModal(false)}
-        title="Add Variant"
+        onClose={() => {
+          setShowVariantModal(false);
+          setEditingVariant(null);
+        }}
+        title={editingVariant ? "Edit Variant" : "Add Variant"}
         size="lg"
       >
-        <form onSubmit={handleCreateVariant} className="space-y-4">
+        <form onSubmit={handleSubmitVariant} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <TextField
               label="SKU"
@@ -369,13 +443,21 @@ export default function ProductVariants() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setShowVariantModal(false)}
+              onClick={() => {
+                setShowVariantModal(false);
+                setEditingVariant(null);
+                setOriginalFormData(null);
+              }}
               disabled={loading}
             >
               Cancel
             </Button>
-            <Button type="submit" isLoading={loading}>
-              Create Variant
+            <Button
+              type="submit"
+              isLoading={loading}
+              disabled={!hasFormChanged()}
+            >
+              {editingVariant ? "Update Variant" : "Create Variant"}
             </Button>
           </div>
         </form>

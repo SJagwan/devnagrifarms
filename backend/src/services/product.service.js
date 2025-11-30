@@ -116,6 +116,55 @@ const listVariants = async (productId, query) => {
 };
 
 const addVariantToProduct = async (productId, data) => {
+  // Basic validation for variant payload
+  const allowedUnits = ["pcs", "g", "kg", "ml", "l"];
+  const errors = [];
+
+  const reqString = (v) => typeof v === "string" && v.trim().length > 0;
+  const toNum = (v) =>
+    v === "" || v === null || typeof v === "undefined" ? NaN : Number(v);
+
+  if (!reqString(data.sku)) errors.push("SKU is required");
+  if (data.unit && !allowedUnits.includes(String(data.unit)))
+    errors.push("Unit must be one of pcs, g, kg, ml, l");
+
+  const priceNum = toNum(data.price);
+  const mrpNum = toNum(data.mrp);
+  const qtyNum = toNum(data.quantity);
+  const minOrderNum = toNum(data.min_order_qty);
+  const maxOrderNum = toNum(data.max_order_qty);
+  const discountNum = toNum(data.discount_percent);
+
+  if (isNaN(priceNum) || priceNum < 0)
+    errors.push("Price must be a non-negative number");
+  if (isNaN(mrpNum) || mrpNum < 0)
+    errors.push("MRP must be a non-negative number");
+  if (!isNaN(priceNum) && !isNaN(mrpNum) && priceNum > mrpNum)
+    errors.push("Price cannot exceed MRP");
+  if (isNaN(qtyNum) || qtyNum <= 0)
+    errors.push("Quantity must be a positive number");
+  if (!isNaN(minOrderNum) && minOrderNum <= 0)
+    errors.push("Min order qty must be a positive number");
+  if (!isNaN(maxOrderNum) && maxOrderNum < 0)
+    errors.push("Max order qty must be a non-negative number");
+  if (
+    !isNaN(minOrderNum) &&
+    !isNaN(maxOrderNum) &&
+    maxOrderNum &&
+    minOrderNum &&
+    Number(maxOrderNum) < Number(minOrderNum)
+  ) {
+    errors.push("Max order qty cannot be less than min order qty");
+  }
+  if (!isNaN(discountNum) && (discountNum < 0 || discountNum > 100))
+    errors.push("Discount percent must be between 0 and 100");
+
+  if (errors.length) {
+    const err = new Error(errors.join("; "));
+    err.statusCode = 400;
+    throw err;
+  }
+
   const { images, ...variantData } = data;
   variantData.product_id = productId;
   const createdVariant = await variantRepo.createVariant(variantData);
@@ -128,6 +177,70 @@ const addVariantToProduct = async (productId, data) => {
 };
 
 const updateVariant = async (variantId, data) => {
+  // Same validations as create, but allow partial updates (only validate provided fields)
+  const allowedUnits = ["pcs", "g", "kg", "ml", "l"];
+  const errors = [];
+  const toNum = (v) =>
+    v === "" || v === null || typeof v === "undefined" ? NaN : Number(v);
+
+  if (Object.prototype.hasOwnProperty.call(data, "sku")) {
+    if (!(typeof data.sku === "string" && data.sku.trim().length > 0))
+      errors.push("SKU is required");
+  }
+  if (Object.prototype.hasOwnProperty.call(data, "unit")) {
+    if (data.unit && !allowedUnits.includes(String(data.unit)))
+      errors.push("Unit must be one of pcs, g, kg, ml, l");
+  }
+
+  const priceNum = toNum(data.price);
+  const mrpNum = toNum(data.mrp);
+  const qtyNum = toNum(data.quantity);
+  const minOrderNum = toNum(data.min_order_qty);
+  const maxOrderNum = toNum(data.max_order_qty);
+  const discountNum = toNum(data.discount_percent);
+
+  if (Object.prototype.hasOwnProperty.call(data, "price")) {
+    if (isNaN(priceNum) || priceNum < 0)
+      errors.push("Price must be a non-negative number");
+  }
+  if (Object.prototype.hasOwnProperty.call(data, "mrp")) {
+    if (isNaN(mrpNum) || mrpNum < 0)
+      errors.push("MRP must be a non-negative number");
+  }
+  if (!isNaN(priceNum) && !isNaN(mrpNum) && priceNum > mrpNum)
+    errors.push("Price cannot exceed MRP");
+  if (Object.prototype.hasOwnProperty.call(data, "quantity")) {
+    if (isNaN(qtyNum) || qtyNum <= 0)
+      errors.push("Quantity must be a positive number");
+  }
+  if (Object.prototype.hasOwnProperty.call(data, "min_order_qty")) {
+    if (!isNaN(minOrderNum) && minOrderNum <= 0)
+      errors.push("Min order qty must be a positive number");
+  }
+  if (Object.prototype.hasOwnProperty.call(data, "max_order_qty")) {
+    if (!isNaN(maxOrderNum) && maxOrderNum < 0)
+      errors.push("Max order qty must be a non-negative number");
+  }
+  if (
+    !isNaN(minOrderNum) &&
+    !isNaN(maxOrderNum) &&
+    maxOrderNum &&
+    minOrderNum &&
+    Number(maxOrderNum) < Number(minOrderNum)
+  ) {
+    errors.push("Max order qty cannot be less than min order qty");
+  }
+  if (Object.prototype.hasOwnProperty.call(data, "discount_percent")) {
+    if (!isNaN(discountNum) && (discountNum < 0 || discountNum > 100))
+      errors.push("Discount percent must be between 0 and 100");
+  }
+
+  if (errors.length) {
+    const err = new Error(errors.join("; "));
+    err.statusCode = 400;
+    throw err;
+  }
+
   return await variantRepo.updateVariant(variantId, data);
 };
 
