@@ -52,4 +52,21 @@ export const adminAPI = {
     api.delete(`/admin/products/${productId}/variants/${variantId}`, {
       meta: { successMessage: "Variant deleted" },
     }),
+
+  // Serviceable areas
+  getServiceableAreas: (params = {}) =>
+    api.get("/admin/serviceable-areas", { params }),
+  getServiceableArea: (id) => api.get(`/admin/serviceable-areas/${id}`),
+  createServiceableArea: (payload) =>
+    api.post("/admin/serviceable-areas", payload, {
+      meta: { successMessage: "Serviceable area created" },
+    }),
+  updateServiceableArea: (id, payload) =>
+    api.put(`/admin/serviceable-areas/${id}`, payload, {
+      meta: { successMessage: "Serviceable area updated" },
+    }),
+  deleteServiceableArea: (id) =>
+    api.delete(`/admin/serviceable-areas/${id}`, {
+      meta: { successMessage: "Serviceable area deleted" },
+    }),
 };

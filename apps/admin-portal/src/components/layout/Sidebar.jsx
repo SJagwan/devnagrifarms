@@ -5,6 +5,7 @@ const menuItems = [
   { icon: "📊", label: "Dashboard", path: "/" },
   { icon: "📂", label: "Categories", path: "/categories" },
   { icon: "🛒", label: "Products", path: "/products" },
+  { icon: "📍", label: "Serviceable Areas", path: "/serviceable-areas" },
 ];
 
 export default function Sidebar({ isOpen, toggleSidebar }) {

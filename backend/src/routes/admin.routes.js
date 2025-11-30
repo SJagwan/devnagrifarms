@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticate } = require("../middlewares/auth.middleware");
 const categoryController = require("../controllers/category.controller");
 const productController = require("../controllers/product.controller");
+const serviceableAreaController = require("../controllers/serviceable-area.controller");
 
 const isAdmin = (req, res, next) => {
   if (req.user.userType !== "admin") {
@@ -44,6 +45,28 @@ router.put(
 router.delete(
   "/products/:id/variants/:variantId",
   productController.deleteVariant
+);
+
+// Serviceable areas management
+router.get(
+  "/serviceable-areas",
+  serviceableAreaController.getAllServiceableAreas
+);
+router.get(
+  "/serviceable-areas/:id",
+  serviceableAreaController.getServiceableAreaById
+);
+router.post(
+  "/serviceable-areas",
+  serviceableAreaController.createServiceableArea
+);
+router.put(
+  "/serviceable-areas/:id",
+  serviceableAreaController.updateServiceableArea
+);
+router.delete(
+  "/serviceable-areas/:id",
+  serviceableAreaController.deleteServiceableArea
 );
 
 module.exports = router;
