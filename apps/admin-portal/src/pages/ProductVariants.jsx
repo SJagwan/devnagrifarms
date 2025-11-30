@@ -512,57 +512,8 @@ export default function ProductVariants() {
               </div>
             )}
             <p className="text-xs text-gray-500 mt-1">
-              You can also paste existing image URLs below; total is capped at
-              3.
+              Select up to 3 image files to upload.
             </p>
-            <label className="block text-sm font-medium text-gray-700 mt-3 mb-1">
-              Image URLs (one per line)
-            </label>
-            <textarea
-              rows={3}
-              value={(variantForm.images || []).join("\n")}
-              onChange={(e) =>
-                handleVariantChange(
-                  "images",
-                  e.target.value
-                    .split("\n")
-                    .map((x) => x.trim())
-                    .filter((x) => x)
-                )
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="s3/key/img1.jpg\nhttps://cdn.example.com/img2.jpg"
-            />
-            {/* Existing URL previews */}
-            {Array.isArray(variantForm.images) &&
-              variantForm.images.length > 0 && (
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  {variantForm.images.slice(0, 3).map((src, idx) => {
-                    const publicUrl = getPublicImageUrl(src);
-                    const isUrl =
-                      typeof publicUrl === "string" &&
-                      /^https?:\/\//.test(publicUrl);
-                    return (
-                      <div key={idx} className="border rounded p-1 text-xs">
-                        <div className="h-16 bg-gray-50 flex items-center justify-center overflow-hidden">
-                          {isUrl ? (
-                            <img
-                              src={publicUrl}
-                              alt="img"
-                              className="max-h-16"
-                            />
-                          ) : (
-                            <span className="text-gray-500">{src}</span>
-                          )}
-                        </div>
-                        <div className="mt-1 truncate" title={src}>
-                          {isUrl ? "URL" : "Key"}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
           </div>
           <div className="flex justify-end gap-3">
             <Button
