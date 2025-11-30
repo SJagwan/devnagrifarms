@@ -1,5 +1,59 @@
 const productRepo = require("../repositories/product.repository");
 const variantRepo = require("../repositories/product-variant.repository");
+const storageService = require("./storage.service");
+const { ProductVariantImage } = require("../models");
+
+/**
+ * Normalize image payload: accepts strings or objects with {key} or {url}.
+ * Returns array of strings (keys), capped at maxImages.
+ */
+function normalizeImages(images, maxImages = 3) {
+  if (!images || !Array.isArray(images)) return [];
+  
+  return images
+    .filter((img) => img !== null && typeof img !== "undefined")
+    .map((img) => {
+      if (typeof img === "string") return img.trim();
+      if (typeof img === "object" && img !== null) {
+        const val = img.key || img.url || "";
+        return typeof val === "string" ? val.trim() : "";
+      }
+      return "";
+    })
+    .filter((v) => v.length > 0)
+    .slice(0, maxImages);
+}
+
+/**
+ * Replace variant images: deletes old DB records and S3 objects, adds new ones.
+ * Returns array of keys that were deleted from S3.
+ */
+async function replaceVariantImages(variantId, newImages) {
+  // Get existing images
+  const existing = await variantRepo.getVariantById(variantId);
+  const oldKeys = (existing?.images || []).map((img) => img.url).filter((k) => k);
+
+  // Delete old DB records
+  await ProductVariantImage.destroy({ where: { product_variant_id: variantId } });
+
+  // Normalize and add new images
+  const normalized = normalizeImages(newImages, 3);
+  for (let i = 0; i < normalized.length; i++) {
+    await variantRepo.addVariantImage(variantId, normalized[i], i === 0);
+  }
+
+  // Delete old S3 objects (if not in new list)
+  const toDelete = oldKeys.filter((k) => !normalized.includes(k));
+  for (const key of toDelete) {
+    try {
+      await storageService.deleteObject(key);
+    } catch (err) {
+      console.error(`Failed to delete S3 object ${key}:`, err.message);
+    }
+  }
+
+  return toDelete;
+}
 
 const getAllProducts = async (query) => {
   const {
@@ -49,11 +103,13 @@ const createProduct = async (productData) => {
 
       const createdVariant = await variantRepo.createVariant(variantData);
 
-      if (images && images.length > 0) {
-        for (let i = 0; i < images.length; i++) {
+      // Normalize and cap images to max 3; support strings or objects with { key }
+      if (images && Array.isArray(images)) {
+        const normalized = normalizeImages(images, 3);
+        for (let i = 0; i < normalized.length; i++) {
           await variantRepo.addVariantImage(
             createdVariant.id,
-            images[i],
+            normalized[i],
             i === 0
           );
         }
@@ -168,9 +224,15 @@ const addVariantToProduct = async (productId, data) => {
   const { images, ...variantData } = data;
   variantData.product_id = productId;
   const createdVariant = await variantRepo.createVariant(variantData);
-  if (images && images.length > 0) {
-    for (let i = 0; i < images.length; i++) {
-      await variantRepo.addVariantImage(createdVariant.id, images[i], i === 0);
+  // Normalize and cap images to max 3; support strings or objects with { key }
+  if (images && Array.isArray(images)) {
+    const normalized = normalizeImages(images, 3);
+    for (let i = 0; i < normalized.length; i++) {
+      await variantRepo.addVariantImage(
+        createdVariant.id,
+        normalized[i],
+        i === 0
+      );
     }
   }
   return await variantRepo.getVariantById(createdVariant.id);
@@ -241,11 +303,35 @@ const updateVariant = async (variantId, data) => {
     throw err;
   }
 
-  return await variantRepo.updateVariant(variantId, data);
+  const { images, ...variantData } = data;
+  const updated = await variantRepo.updateVariant(variantId, variantData);
+
+  // If images provided, replace existing images
+  if (images && Array.isArray(images)) {
+    await replaceVariantImages(variantId, images);
+  }
+
+  return await variantRepo.getVariantById(variantId);
 };
 
 const deleteVariant = async (variantId) => {
-  return await variantRepo.deleteVariant(variantId);
+  // Get variant images before deletion
+  const variant = await variantRepo.getVariantById(variantId);
+  const imageKeys = (variant?.images || []).map((img) => img.url).filter((k) => k);
+
+  // Delete variant (cascade deletes images from DB)
+  await variantRepo.deleteVariant(variantId);
+
+  // Delete S3 objects
+  for (const key of imageKeys) {
+    try {
+      await storageService.deleteObject(key);
+    } catch (err) {
+      console.error(`Failed to delete S3 object ${key}:`, err.message);
+    }
+  }
+
+  return true;
 };
 
 module.exports = {

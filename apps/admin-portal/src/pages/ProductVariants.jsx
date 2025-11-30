@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { adminAPI } from "../lib/api/requests";
+import { uploadVariantImages, getPublicImageUrl } from "../lib/storage";
 import PageHeader from "../components/ui/PageHeader";
 import PageContainer from "../components/ui/PageContainer";
 import Button from "../components/ui/Button";
@@ -27,6 +28,7 @@ export default function ProductVariants() {
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [editingVariant, setEditingVariant] = useState(null);
   const [originalFormData, setOriginalFormData] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
   const [variantForm, setVariantForm] = useState({
     sku: "",
     type: "",
@@ -67,6 +69,7 @@ export default function ProductVariants() {
   const handleOpenCreateVariant = () => {
     setEditingVariant(null);
     setOriginalFormData(null);
+    setImageFiles([]);
     setVariantForm({
       sku: "",
       type: "",
@@ -87,6 +90,7 @@ export default function ProductVariants() {
 
   const handleEditVariant = (variant) => {
     setEditingVariant(variant);
+    setImageFiles([]);
     const formData = {
       sku: variant.sku || "",
       type: variant.type || "",
@@ -100,7 +104,7 @@ export default function ProductVariants() {
       min_order_qty: String(variant.min_order_qty || "1"),
       max_order_qty: String(variant.max_order_qty || ""),
       is_active: variant.is_active ?? true,
-      images: variant.images?.map((img) => img.image_url) || [],
+      images: variant.images?.map((img) => img.url) || [],
     };
     setVariantForm(formData);
     setOriginalFormData(formData);
@@ -136,6 +140,20 @@ export default function ProductVariants() {
     try {
       const payload = { ...variantForm };
 
+      // Upload selected files (max 3) and merge with existing image entries
+      let uploaded = [];
+      if (imageFiles && imageFiles.length > 0) {
+        uploaded = await uploadVariantImages(
+          imageFiles,
+          `products/variants/${id}`
+        );
+      }
+      const existing = (variantForm.images || [])
+        .map((s) => (typeof s === "string" ? s.trim() : ""))
+        .filter((s) => s.length > 0)
+        .map((s) => ({ key: s }));
+      payload.images = [...uploaded, ...existing].slice(0, 3);
+
       if (editingVariant) {
         await adminAPI.updateProductVariant(id, editingVariant.id, payload);
       } else {
@@ -145,6 +163,7 @@ export default function ProductVariants() {
       setShowVariantModal(false);
       setEditingVariant(null);
       setOriginalFormData(null);
+      setImageFiles([]);
       setVariantForm({
         sku: "",
         type: "",
@@ -177,7 +196,7 @@ export default function ProductVariants() {
   // Check if form has changed (for edit mode)
   const hasFormChanged = () => {
     if (!editingVariant || !originalFormData) return true; // Allow submit for create mode
-
+    if (imageFiles && imageFiles.length > 0) return true;
     return JSON.stringify(variantForm) !== JSON.stringify(originalFormData);
   };
 
@@ -187,6 +206,40 @@ export default function ProductVariants() {
       label: "SKU",
       sortKey: "sku",
       render: (row) => row.sku || "-",
+    },
+    {
+      key: "images",
+      label: "Images",
+      render: (row) => (
+        <div className="flex items-center gap-1">
+          {Array.isArray(row.images) && row.images.length > 0 ? (
+            row.images.slice(0, 3).map((img, idx) => {
+              const src = img?.url || "";
+              const publicUrl = getPublicImageUrl(src);
+              const isUrl =
+                typeof publicUrl === "string" && /^https?:\/\//.test(publicUrl);
+              return isUrl ? (
+                <img
+                  key={idx}
+                  src={publicUrl}
+                  alt="variant"
+                  className="w-8 h-8 rounded object-cover border"
+                />
+              ) : (
+                <span
+                  key={idx}
+                  className="inline-block w-8 h-8 rounded bg-gray-100 text-gray-600 text-[10px] leading-8 text-center border"
+                  title={src}
+                >
+                  key
+                </span>
+              );
+            })
+          ) : (
+            <span className="text-xs text-gray-500">None</span>
+          )}
+        </div>
+      ),
     },
     {
       key: "type",
@@ -424,20 +477,92 @@ export default function ProductVariants() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              Upload Images (max 3)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) =>
+                setImageFiles(Array.from(e.target.files || []).slice(0, 3))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            {imageFiles.length > 0 && (
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {imageFiles.map((f, idx) => (
+                  <div key={idx} className="border rounded p-1 text-xs">
+                    <div className="h-16 bg-gray-50 flex items-center justify-center overflow-hidden">
+                      {/* Use browser preview if possible */}
+                      {f.type.startsWith("image/") ? (
+                        <img
+                          src={URL.createObjectURL(f)}
+                          alt={f.name}
+                          className="max-h-16"
+                        />
+                      ) : (
+                        <span className="text-gray-500">{f.name}</span>
+                      )}
+                    </div>
+                    <div className="mt-1 truncate" title={f.name}>
+                      {f.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              You can also paste existing image URLs below; total is capped at
+              3.
+            </p>
+            <label className="block text-sm font-medium text-gray-700 mt-3 mb-1">
               Image URLs (one per line)
             </label>
             <textarea
               rows={3}
-              value={variantForm.images.join("\n")}
+              value={(variantForm.images || []).join("\n")}
               onChange={(e) =>
                 handleVariantChange(
                   "images",
-                  e.target.value.split("\n").filter((x) => x.trim())
+                  e.target.value
+                    .split("\n")
+                    .map((x) => x.trim())
+                    .filter((x) => x)
                 )
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="https://example.com/img1.jpg\nhttps://example.com/img2.jpg"
+              placeholder="s3/key/img1.jpg\nhttps://cdn.example.com/img2.jpg"
             />
+            {/* Existing URL previews */}
+            {Array.isArray(variantForm.images) &&
+              variantForm.images.length > 0 && (
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {variantForm.images.slice(0, 3).map((src, idx) => {
+                    const publicUrl = getPublicImageUrl(src);
+                    const isUrl =
+                      typeof publicUrl === "string" &&
+                      /^https?:\/\//.test(publicUrl);
+                    return (
+                      <div key={idx} className="border rounded p-1 text-xs">
+                        <div className="h-16 bg-gray-50 flex items-center justify-center overflow-hidden">
+                          {isUrl ? (
+                            <img
+                              src={publicUrl}
+                              alt="img"
+                              className="max-h-16"
+                            />
+                          ) : (
+                            <span className="text-gray-500">{src}</span>
+                          )}
+                        </div>
+                        <div className="mt-1 truncate" title={src}>
+                          {isUrl ? "URL" : "Key"}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
           </div>
           <div className="flex justify-end gap-3">
             <Button

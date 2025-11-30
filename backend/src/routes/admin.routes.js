@@ -4,6 +4,7 @@ const { authenticate } = require("../middlewares/auth.middleware");
 const categoryController = require("../controllers/category.controller");
 const productController = require("../controllers/product.controller");
 const serviceableAreaController = require("../controllers/serviceable-area.controller");
+const storageController = require("../controllers/storage.controller");
 
 const isAdmin = (req, res, next) => {
   if (req.user.userType !== "admin") {
@@ -68,5 +69,9 @@ router.delete(
   "/serviceable-areas/:id",
   serviceableAreaController.deleteServiceableArea
 );
+
+// Storage (S3) - pre-signed URL generation
+router.post("/storage/presign", storageController.getPresignedUploadUrl);
+router.delete("/storage/delete", storageController.deleteObject);
 
 module.exports = router;
