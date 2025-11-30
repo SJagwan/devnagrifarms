@@ -9,7 +9,7 @@ const { ProductVariantImage } = require("../models");
  */
 function normalizeImages(images, maxImages = 3) {
   if (!images || !Array.isArray(images)) return [];
-  
+
   return images
     .filter((img) => img !== null && typeof img !== "undefined")
     .map((img) => {
@@ -31,10 +31,14 @@ function normalizeImages(images, maxImages = 3) {
 async function replaceVariantImages(variantId, newImages) {
   // Get existing images
   const existing = await variantRepo.getVariantById(variantId);
-  const oldKeys = (existing?.images || []).map((img) => img.url).filter((k) => k);
+  const oldKeys = (existing?.images || [])
+    .map((img) => img.url)
+    .filter((k) => k);
 
   // Delete old DB records
-  await ProductVariantImage.destroy({ where: { product_variant_id: variantId } });
+  await ProductVariantImage.destroy({
+    where: { product_variant_id: variantId },
+  });
 
   // Normalize and add new images
   const normalized = normalizeImages(newImages, 3);
@@ -317,7 +321,9 @@ const updateVariant = async (variantId, data) => {
 const deleteVariant = async (variantId) => {
   // Get variant images before deletion
   const variant = await variantRepo.getVariantById(variantId);
-  const imageKeys = (variant?.images || []).map((img) => img.url).filter((k) => k);
+  const imageKeys = (variant?.images || [])
+    .map((img) => img.url)
+    .filter((k) => k);
 
   // Delete variant (cascade deletes images from DB)
   await variantRepo.deleteVariant(variantId);
