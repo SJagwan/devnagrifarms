@@ -32,8 +32,21 @@ const loginWithPassword = async (req, res) => {
 
 const loginWithOTP = async (req, res) => {
   try {
-    const { phone, otp } = req.body;
-    const tokens = await authService.loginWithOTP(phone, otp, req.ip);
+    const { phone, otp, user_type } = req.body;
+    const tokens = await authService.loginWithOTP(
+      phone,
+      otp,
+      user_type,
+      req.ip
+    );
+
+    if (user_type && tokens.user.userType !== user_type) {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. This portal is for ${user_type} users only.`,
+      });
+    }
+
     res.json({ success: true, ...tokens });
   } catch (error) {
     res.status(401).json({ success: false, message: error.message });
@@ -69,10 +82,35 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
+const requestOTP = async (req, res) => {
+  try {
+    const { phone, user_type } = req.body;
+    if (!phone || !user_type) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Phone number and user type are required",
+        });
+    }
+    await authService.requestOTP(phone, user_type);
+    // In dev, we might want to return the OTP in the response for testing
+    // In prod, this should strictly only send SMS
+    res.json({
+      success: true,
+      message: "OTP sent successfully",
+      // dev_otp: otp // specific for testing if needed
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   loginWithPassword,
   loginWithOTP,
   refreshToken,
   logout,
   getCurrentUser,
+  requestOTP,
 };

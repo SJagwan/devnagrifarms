@@ -82,4 +82,67 @@ module.exports = {
   createServiceableArea,
   updateServiceableArea,
   deleteServiceableArea,
+  checkPointServiceability,
 };
+
+/**
+ * Check if a point is inside any serviceable area
+ * This requires a database with GIS support (PostGIS or MySQL 5.7+ with correct SRID)
+ * For simplicity in this review/MVP, we'll iterate or use a simple bounding box check if Sequelize/DB setup allows, or just return true for now if complexity is high.
+ *
+ * Ideally: ST_Contains(polygon, point)
+ */
+const checkPointServiceability = async ({ lat, lng, pincode }) => {
+  // TODO: Implement actual Polygon check using Sequelize.fn('ST_Within', ...) or similar
+  // For the MVP demo, we will check if ANY serviceable area exists and just return that it is serviceable for demo purposes,
+  // OR if we want to be stricter, we can implement the ray-casting algorithm in JS if the number of areas is small.
+
+  // Let's implement a simple robust check:
+  // 1. Get all active areas
+  const areas = await serviceableAreaRepo.getAllActiveAreas();
+
+  if (!areas || areas.length === 0) {
+    return { serviceable: false, message: "No active service areas found." };
+  }
+
+  // If pincode matches name or some field? (optional)
+  if (pincode) {
+    const match = areas.find((a) => a.pincodes && a.pincodes.includes(pincode));
+    if (match) return { serviceable: true, area: match };
+  }
+
+  // If lat/lng, do a PIP (Point in Polygon) check in JS for now (low scale)
+  if (lat && lng) {
+    const point = [Number(lat), Number(lng)];
+    for (const area of areas) {
+      if (area.coordinates && isPointInPolygon(point, area.coordinates)) {
+        return { serviceable: true, area: area };
+      }
+      // Fail-safe: if no coordinates but area exists, maybe allow? No, strict.
+    }
+  }
+
+  return { serviceable: false, message: "Location not served." };
+};
+
+// Ray-casting algorithm for Point in Polygon
+// point: [lat, lng], vs: [[lat, lng], [lat, lng], ...] (Polygon vertices)
+function isPointInPolygon(point, vs) {
+  // Basic ray casting
+  var x = point[0],
+    y = point[1];
+
+  var inside = false;
+  for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+    var xi = vs[i][0],
+      yi = vs[i][1];
+    var xj = vs[j][0],
+      yj = vs[j][1];
+
+    var intersect =
+      yi > y != yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+
+  return inside;
+}

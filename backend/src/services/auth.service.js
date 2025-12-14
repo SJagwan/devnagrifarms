@@ -1,9 +1,10 @@
-const { RefreshToken } = require("../models");
+const { RefreshToken, User } = require("../models");
 const bcrypt = require("bcrypt");
 
 const {
   findUserForAuth,
   findUserById,
+  createUser,
 } = require("../repositories/user.repository");
 
 const {
@@ -47,15 +48,47 @@ const loginWithPassword = async (email, password, user_type, ipAddress) => {
   };
 };
 
-const loginWithOTP = async (phone, otp, ipAddress) => {
-  const user = await User.findOne({ where: { phone } });
-  if (!user) throw new Error("User not found");
+const loginWithOTP = async (phone, otp, userType = null, ipAddress) => {
+  const user = await findUserForAuth(phone, userType);
 
-  if (user.otp_code !== otp || user.otp_expires_at < new Date()) {
+  if (!user) {
+    throw new Error("User not found or invalid phone number");
+  }
+
+  // Check OTP
+  if (
+    !user.otp_code ||
+    user.otp_code !== otp ||
+    !user.otp_expires_at ||
+    new Date() > user.otp_expires_at
+  ) {
     throw new Error("Invalid or expired OTP");
   }
 
-  return createTokens(user.id, ipAddress);
+  // Clear OTP
+  user.otp_code = null;
+  user.otp_expires_at = null;
+
+  // Mark phone as verified if not already
+  if (!user.phone_verified_at) {
+    user.phone_verified_at = new Date();
+  }
+
+  await user.save();
+
+  // Generate tokens
+  return {
+    ...(await createTokens(user.id, ipAddress)),
+    user: {
+      id: user.id,
+      email: user.email,
+      phone: user.phone,
+      name: user.first_name
+        ? `${user.first_name} ${user.last_name}`.trim()
+        : "Customer",
+      userType: user.user_type,
+    },
+  };
 };
 
 const refreshAccessToken = async (refreshToken, ipAddress) => {
@@ -101,4 +134,38 @@ module.exports = {
   refreshAccessToken,
   logoutUser,
   getCurrentUser,
+  requestOTP,
+};
+
+const requestOTP = async (phone, userType) => {
+  if (!userType) throw new Error("User type is required");
+
+  // Generate 6 digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  // Check if user exists
+  let user = await findUserForAuth(phone);
+
+  if (user) {
+    // Update existing user
+    user.otp_code = otp;
+    user.otp_expires_at = otpExpiresAt;
+    await user.save();
+  } else {
+    // Create new user with specified type
+    user = await createUser({
+      phone,
+      otp_code: otp,
+      otp_expires_at: otpExpiresAt,
+      user_type: userType,
+      status: "active",
+      // email and password_hash are null
+    });
+  }
+
+  // TODO: Integrate SMS gateway here
+  console.log(`[DEV] OTP for ${phone}: ${otp}`);
+
+  return { phone, message: "OTP sent" };
 };

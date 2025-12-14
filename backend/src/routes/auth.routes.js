@@ -4,7 +4,8 @@ const { authenticate } = require("../middlewares/auth.middleware");
 const authController = require("../controllers/auth.controller");
 
 router.post("/login", authController.loginWithPassword);
-router.post("/login/otp", authController.loginWithOTP);
+router.post("/login/otp", authController.loginWithOTP); // Verify OTP (Login/Signup)
+router.post("/otp/request", authController.requestOTP); // Send OTP
 router.post("/refresh", authController.refreshToken);
 router.post("/logout", authenticate, authController.logout);
 router.get("/me", authenticate, authController.getCurrentUser);

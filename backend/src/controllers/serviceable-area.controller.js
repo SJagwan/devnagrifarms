@@ -91,4 +91,36 @@ module.exports = {
   createServiceableArea,
   updateServiceableArea,
   deleteServiceableArea,
+  checkServiceability,
+};
+
+/**
+ * Check if a location is serviceable
+ */
+const checkServiceability = async (req, res) => {
+  try {
+    const { lat, lng, pincode } = req.body;
+
+    // We expect either lat/lng OR pincode
+    // For now, let's assume lat/lng is the primary check
+    if ((!lat || !lng) && !pincode) {
+      return res.status(400).json({
+        success: false,
+        message: "Coordinates (lat, lng) or pincode are required",
+      });
+    }
+
+    const result = await serviceableAreaService.checkPointServiceability({
+      lat,
+      lng,
+      pincode,
+    });
+
+    return res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
 };

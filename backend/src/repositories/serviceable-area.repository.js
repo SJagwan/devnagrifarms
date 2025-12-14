@@ -75,4 +75,14 @@ module.exports = {
   createServiceableArea,
   updateServiceableArea,
   deleteServiceableArea,
+  getAllActiveAreas,
+};
+
+/**
+ * Get all active serviceable areas (no pagination)
+ */
+const getAllActiveAreas = async () => {
+  return await ServiceableArea.findAll({
+    where: { is_active: true },
+  });
 };

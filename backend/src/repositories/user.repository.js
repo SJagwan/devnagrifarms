@@ -39,8 +39,10 @@ const findUserByIdentifier = async (identifier, activeOnly = true) => {
   });
 };
 
-const findUserForAuth = async (email, userType = null) => {
-  const where = { email };
+const findUserForAuth = async (identifier, userType = null) => {
+  const where = {
+    [Op.or]: [{ email: identifier }, { phone: identifier }],
+  };
   if (userType) where.user_type = userType;
 
   return await User.findOne({
@@ -52,14 +54,22 @@ const findUserForAuth = async (email, userType = null) => {
       "email",
       "phone",
       "password_hash",
+      "otp_code",
+      "otp_expires_at",
+      "phone_verified_at",
       "user_type",
       "status",
     ],
   });
 };
 
+const createUser = async (userData) => {
+  return await User.create(userData);
+};
+
 module.exports = {
   findUserById,
   findUserByIdentifier,
   findUserForAuth,
+  createUser,
 };
