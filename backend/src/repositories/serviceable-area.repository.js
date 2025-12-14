@@ -69,15 +69,6 @@ const deleteServiceableArea = async (id) => {
   return true;
 };
 
-module.exports = {
-  getServiceableAreasPaged,
-  getServiceableAreaById,
-  createServiceableArea,
-  updateServiceableArea,
-  deleteServiceableArea,
-  getAllActiveAreas,
-};
-
 /**
  * Get all active serviceable areas (no pagination)
  */
@@ -85,4 +76,13 @@ const getAllActiveAreas = async () => {
   return await ServiceableArea.findAll({
     where: { is_active: true },
   });
+};
+
+module.exports = {
+  getServiceableAreasPaged,
+  getServiceableAreaById,
+  createServiceableArea,
+  updateServiceableArea,
+  deleteServiceableArea,
+  getAllActiveAreas,
 };

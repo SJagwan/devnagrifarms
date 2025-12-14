@@ -128,15 +128,6 @@ const getCurrentUser = async (userId) => {
   };
 };
 
-module.exports = {
-  loginWithPassword,
-  loginWithOTP,
-  refreshAccessToken,
-  logoutUser,
-  getCurrentUser,
-  requestOTP,
-};
-
 const requestOTP = async (phone, userType) => {
   if (!userType) throw new Error("User type is required");
 
@@ -168,4 +159,13 @@ const requestOTP = async (phone, userType) => {
   console.log(`[DEV] OTP for ${phone}: ${otp}`);
 
   return { phone, message: "OTP sent" };
+};
+
+module.exports = {
+  loginWithPassword,
+  loginWithOTP,
+  refreshAccessToken,
+  logoutUser,
+  getCurrentUser,
+  requestOTP,
 };

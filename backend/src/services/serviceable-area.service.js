@@ -76,15 +76,6 @@ const deleteServiceableArea = async (id) => {
   return await serviceableAreaRepo.deleteServiceableArea(id);
 };
 
-module.exports = {
-  getAllServiceableAreas,
-  getServiceableAreaById,
-  createServiceableArea,
-  updateServiceableArea,
-  deleteServiceableArea,
-  checkPointServiceability,
-};
-
 /**
  * Check if a point is inside any serviceable area
  * This requires a database with GIS support (PostGIS or MySQL 5.7+ with correct SRID)
@@ -146,3 +137,12 @@ function isPointInPolygon(point, vs) {
 
   return inside;
 }
+
+module.exports = {
+  getAllServiceableAreas,
+  getServiceableAreaById,
+  createServiceableArea,
+  updateServiceableArea,
+  deleteServiceableArea,
+  checkPointServiceability,
+};

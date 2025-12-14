@@ -85,15 +85,6 @@ const deleteServiceableArea = async (req, res) => {
   }
 };
 
-module.exports = {
-  getAllServiceableAreas,
-  getServiceableAreaById,
-  createServiceableArea,
-  updateServiceableArea,
-  deleteServiceableArea,
-  checkServiceability,
-};
-
 /**
  * Check if a location is serviceable
  */
@@ -123,4 +114,13 @@ const checkServiceability = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
+};
+
+module.exports = {
+  getAllServiceableAreas,
+  getServiceableAreaById,
+  createServiceableArea,
+  updateServiceableArea,
+  deleteServiceableArea,
+  checkServiceability,
 };
