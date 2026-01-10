@@ -1,6 +1,6 @@
 import "../global.css";
 import { Slot } from "expo-router";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider } from "@context/AuthContext";
 
@@ -9,7 +9,12 @@ export default function Layout() {
     <AuthProvider>
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <Slot />
+        <SafeAreaView
+          className="flex-1 bg-white"
+          edges={["top", "left", "right"]}
+        >
+          <Slot />
+        </SafeAreaView>
       </SafeAreaProvider>
     </AuthProvider>
   );

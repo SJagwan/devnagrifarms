@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
 import api from "@lib/apiClient";
 import { Ionicons } from "@expo/vector-icons";
@@ -44,7 +43,7 @@ export default function ShopScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <View className="flex-1 bg-white">
       <View className="p-4 border-b border-gray-100">
         <Text className="text-xl font-bold">All Products</Text>
       </View>
@@ -62,6 +61,6 @@ export default function ShopScreen() {
           contentContainerStyle={{ padding: 8 }}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }

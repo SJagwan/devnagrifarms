@@ -1,5 +1,4 @@
 import { View, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@context/AuthContext";
 import Button from "@shared/components/Button";
 
@@ -7,7 +6,7 @@ export default function ProfileScreen() {
   const { logout, user } = useAuth();
 
   return (
-    <SafeAreaView className="flex-1 bg-white p-4">
+    <View className="flex-1 bg-white p-4">
       <Text className="text-2xl font-bold mb-6">Profile</Text>
 
       <View className="mb-8">
@@ -16,6 +15,6 @@ export default function ProfileScreen() {
       </View>
 
       <Button title="Logout" variant="outline" onPress={logout} />
-    </SafeAreaView>
+    </View>
   );
 }

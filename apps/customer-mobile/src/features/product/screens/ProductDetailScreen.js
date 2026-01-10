@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import api from "@lib/apiClient";
@@ -43,7 +42,7 @@ export default function ProductDetailScreen() {
   if (!product) return null;
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-white">
+    <View className="flex-1 bg-white">
       <ScrollView className="flex-1">
         <View className="h-64 bg-gray-100 w-full mb-4" />
 
@@ -84,6 +83,6 @@ export default function ProductDetailScreen() {
           }
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

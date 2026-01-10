@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { authAPI } from "@lib/apiClient";
 import Input from "@shared/components/Input";
 import Button from "@shared/components/Button";
@@ -49,7 +48,7 @@ export default function LocationCheckScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white p-6 justify-center">
+    <View className="flex-1 bg-white p-6 justify-center">
       <View>
         <Text className="text-3xl font-bold text-gray-900 mb-2">
           Location Check
@@ -87,6 +86,6 @@ export default function LocationCheckScreen() {
           </Text>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

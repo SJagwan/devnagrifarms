@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { authAPI } from "@lib/apiClient";
 import Input from "@shared/components/Input";
 import Button from "@shared/components/Button";
@@ -35,7 +34,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white p-6 justify-center">
+    <View className="flex-1 bg-white p-6 justify-center">
       <View>
         <Text className="text-3xl font-bold text-gray-900 mb-2">Welcome</Text>
         <Text className="text-gray-600 mb-8">
@@ -52,6 +51,6 @@ export default function LoginScreen() {
 
         <Button title="Get OTP" onPress={handleSendOTP} loading={loading} />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
