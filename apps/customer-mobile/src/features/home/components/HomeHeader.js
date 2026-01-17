@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
@@ -25,21 +25,15 @@ export default function HomeHeader({ cartCount = 0 }) {
         </View>
       </View>
 
-      <View className="flex-row items-center space-x-4">
+      <View className="flex-row items-center gap-4">
         <TouchableOpacity>
           <Ionicons name="notifications-outline" size={24} color="#333" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push("/cart")}>
-          <View className="relative">
-            <Ionicons name="cart-outline" size={24} color="#333" />
-            {cartCount > 0 && (
-              <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 justify-center items-center border border-white">
-                <Text className="text-white text-[9px] font-bold">
-                  {cartCount}
-                </Text>
-              </View>
-            )}
-          </View>
+        <TouchableOpacity
+          onPress={() => router.push("/account")}
+          className="w-9 h-9 rounded-full bg-green-100 items-center justify-center"
+        >
+          <Ionicons name="person" size={20} color="#16a34a" />
         </TouchableOpacity>
       </View>
     </View>
