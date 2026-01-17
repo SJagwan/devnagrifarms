@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, Stack } from "expo-router";
 import { useAuth } from "@context/AuthContext";
+import Button from "@shared/components/Button";
 
 const MENU_SECTIONS = [
   {
@@ -130,13 +131,9 @@ export default function AccountScreen() {
         ))}
 
         {/* Logout Button */}
-        <TouchableOpacity
-          onPress={handleLogout}
-          className="mx-4 mt-6 mb-8 bg-white rounded-2xl border border-gray-100 py-4 flex-row items-center justify-center"
-        >
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text className="ml-2 text-red-500 font-semibold">Logout</Text>
-        </TouchableOpacity>
+        <View className="mx-4 mt-6 mb-8">
+          <Button title="Logout" variant="danger" onPress={handleLogout} />
+        </View>
 
         {/* App Version */}
         <Text className="text-center text-gray-400 text-xs mb-8">

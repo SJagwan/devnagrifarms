@@ -14,12 +14,14 @@ export default function Button({
     primary: "bg-green-600",
     outline: "bg-transparent border border-green-600",
     secondary: "bg-gray-200",
+    danger: "bg-transparent border border-red-500",
   };
 
   const textStyle = {
     primary: "text-white font-semibold text-lg",
     outline: "text-green-600 font-semibold text-lg",
     secondary: "text-gray-800 font-semibold text-lg",
+    danger: "text-red-500 font-semibold text-lg",
   };
 
   return (
