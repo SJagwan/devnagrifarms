@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { authAPI } from "@lib/apiClient";
+import { customerAPI } from "@lib/api";
 import Input from "@shared/components/Input";
 import Button from "@shared/components/Button";
 
@@ -18,7 +18,7 @@ export default function LocationCheckScreen() {
 
     setLoading(true);
     try {
-      const { data } = await authAPI.checkServiceability({ pincode });
+      const { data } = await customerAPI.checkServiceability({ pincode });
 
       if (data.data?.serviceable) {
         Alert.alert("Great News!", "We deliver to your area.", [

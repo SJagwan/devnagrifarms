@@ -145,13 +145,4 @@ api.interceptors.response.use(
   },
 );
 
-export const authAPI = {
-  requestOTP: (phone) =>
-    api.post("/auth/otp/request", { phone, user_type: "customer" }),
-  verifyOTP: (phone, otp) =>
-    api.post("/auth/login/otp", { phone, otp, user_type: "customer" }),
-  checkServiceability: (data) =>
-    api.post("/customer/serviceability/check", data),
-};
-
 export default api;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { authAPI } from "@lib/apiClient";
+import { authAPI } from "@lib/api";
 import Input from "@shared/components/Input";
 import Button from "@shared/components/Button";
 
@@ -14,7 +14,7 @@ export default function LoginScreen() {
     if (phone.length < 10) {
       Alert.alert(
         "Invalid Phone",
-        "Please enter a valid 10-digit mobile number"
+        "Please enter a valid 10-digit mobile number",
       );
       return;
     }
@@ -26,7 +26,7 @@ export default function LoginScreen() {
     } catch (error) {
       Alert.alert(
         "Error",
-        error.response?.data?.message || "Failed to send OTP"
+        error.response?.data?.message || "Failed to send OTP",
       );
     } finally {
       setLoading(false);

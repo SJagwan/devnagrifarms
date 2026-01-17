@@ -11,7 +11,7 @@ import {
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import api from "@lib/apiClient";
+import { customerAPI } from "@lib/api";
 
 export default function ProductsScreen() {
   const [products, setProducts] = useState([]);
@@ -28,8 +28,8 @@ export default function ProductsScreen() {
   const fetchData = async () => {
     try {
       const [productsRes, categoriesRes] = await Promise.all([
-        api.get("/customer/products"),
-        api.get("/customer/categories"),
+        customerAPI.getProducts(),
+        customerAPI.getCategories(),
       ]);
       setProducts(productsRes.data.data || []);
       setCategories(categoriesRes.data.data || []);

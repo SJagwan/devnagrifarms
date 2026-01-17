@@ -9,7 +9,7 @@ import {
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import api from "@lib/apiClient";
+import { customerAPI } from "@lib/api";
 
 export default function ProductVariantScreen() {
   const { id } = useLocalSearchParams();
@@ -24,10 +24,9 @@ export default function ProductVariantScreen() {
 
   const fetchData = async () => {
     try {
-      // Fetch product and variants in parallel
       const [productRes, variantsRes] = await Promise.all([
-        api.get(`/customer/products/${id}`),
-        api.get(`/customer/products/${id}/variants`),
+        customerAPI.getProductById(id),
+        customerAPI.getProductVariants(id),
       ]);
       setProduct(productRes.data.data);
       setVariants(variantsRes.data.data || []);
@@ -44,7 +43,7 @@ export default function ProductVariantScreen() {
     // TODO: Add to subscription plan context
     Alert.alert(
       "Coming Soon",
-      `Add ${product.name} (${variant.quantity}${variant.unit}) to your plan`
+      `Add ${product.name} (${variant.quantity}${variant.unit}) to your plan`,
     );
   };
 

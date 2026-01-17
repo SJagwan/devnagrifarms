@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { authAPI } from "@lib/apiClient";
+import { authAPI } from "@lib/api";
 import { useAuth } from "@context/AuthContext";
 import Input from "@shared/components/Input";
 import Button from "@shared/components/Button";
