@@ -28,23 +28,29 @@ module.exports = (sequelize, DataTypes) => {
       name: {
         type: DataTypes.STRING(100),
         allowNull: false,
-        comment: "Product name",
       },
       description: {
         type: DataTypes.TEXT,
         allowNull: true,
-        comment: "Product description",
       },
       category_id: {
         type: DataTypes.UUID,
         allowNull: false,
-        comment: "Reference to product category",
       },
       default_tax: {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: false,
         defaultValue: 0.0,
-        comment: "Default tax percentage (GST) for India",
+      },
+      is_subscribable: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+      },
+      is_one_time_allowed: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
       },
     },
     {
@@ -53,7 +59,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "products",
       timestamps: true,
       underscored: true,
-    }
+    },
   );
 
   return Product;

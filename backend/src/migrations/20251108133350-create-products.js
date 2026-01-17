@@ -32,6 +32,18 @@ module.exports = {
         allowNull: false,
         defaultValue: 0.0,
       },
+      is_subscribable: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        comment: "If true, product can be subscribed",
+      },
+      is_one_time_allowed: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        comment: "If true, product can be bought one-time",
+      },
       created_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
@@ -39,9 +51,13 @@ module.exports = {
       updated_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
+    });
+
+    await queryInterface.addIndex("products", ["category_id"], {
+      name: "products_category_id_idx",
     });
   },
 

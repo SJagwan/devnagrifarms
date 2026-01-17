@@ -18,6 +18,14 @@ module.exports = {
         type: Sequelize.STRING(255),
         allowNull: true,
       },
+      image_url: {
+        type: Sequelize.STRING(255),
+        allowNull: true,
+      },
+      is_active: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true,
+      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,
@@ -27,7 +35,7 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });

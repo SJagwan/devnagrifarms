@@ -5,7 +5,6 @@ const SUBSCRIPTION_STATUS = {
   ACTIVE: "active",
   PAUSED: "paused",
   CANCELLED: "cancelled",
-  EXPIRED: "expired",
 };
 
 const SCHEDULE_TYPE = {
@@ -24,14 +23,19 @@ module.exports = (sequelize, DataTypes) => {
         onUpdate: "CASCADE",
         as: "user",
       });
+      Subscription.belongsTo(models.AddressUser, {
+        foreignKey: "shipping_address_id",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+        as: "shippingAddress",
+      });
       Subscription.hasMany(models.SubscriptionItem, {
         foreignKey: "subscription_id",
         as: "items",
       });
-
-      Subscription.hasOne(models.Order, {
+      Subscription.hasMany(models.Order, {
         foreignKey: "subscription_id",
-        as: "order",
+        as: "orders",
       });
     }
   }
@@ -48,6 +52,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: false,
       },
+      shipping_address_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
       subscription_name: {
         type: DataTypes.STRING(100),
         allowNull: true,
@@ -58,11 +66,11 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: SUBSCRIPTION_STATUS.ACTIVE,
       },
       start_date: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: false,
       },
       end_date: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: true,
       },
       schedule_type: {
@@ -73,19 +81,19 @@ module.exports = (sequelize, DataTypes) => {
       schedule_details: {
         type: DataTypes.JSON,
         allowNull: true,
-        comment: "User-selected days/dates and optional quantity per day",
       },
-      next_delivery_date: {
-        type: DataTypes.DATE,
+      skip_dates: {
+        type: DataTypes.JSON,
         allowNull: true,
-        comment: "Optional: calculated by the system for scheduler efficiency",
       },
-      auto_renew: {
-        type: DataTypes.BOOLEAN,
+      delivery_slot: {
+        type: DataTypes.ENUM("morning", "evening"),
         allowNull: false,
-        defaultValue: false,
-        comment:
-          "If true, subscription will automatically renew after end_date",
+        defaultValue: "morning",
+      },
+      paused_until: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
       },
     },
     {
@@ -94,7 +102,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "subscriptions",
       timestamps: true,
       underscored: true,
-    }
+    },
   );
 
   Subscription.STATUS = SUBSCRIPTION_STATUS;

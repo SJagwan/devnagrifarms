@@ -32,6 +32,14 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
         comment: "Optional description of the category",
       },
+      image_url: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      is_active: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      },
     },
     {
       sequelize,
@@ -39,7 +47,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "categories",
       timestamps: true,
       underscored: true,
-    }
+    },
   );
 
   return Category;

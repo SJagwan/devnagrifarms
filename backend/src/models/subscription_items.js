@@ -44,6 +44,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
       },
+      tax_percent: {
+        type: DataTypes.DECIMAL(5, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
       discount_percent: {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: true,
@@ -55,7 +60,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "subscription_items",
       timestamps: true,
       underscored: true,
-    }
+    },
   );
 
   return SubscriptionItem;

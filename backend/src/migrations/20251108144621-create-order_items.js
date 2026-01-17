@@ -37,6 +37,16 @@ module.exports = {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
       },
+      tax_percent: {
+        type: Sequelize.DECIMAL(5, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      tax_amount: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
       discount_percent: {
         type: Sequelize.DECIMAL(5, 2),
         allowNull: true,
@@ -52,7 +62,7 @@ module.exports = {
       updated_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });

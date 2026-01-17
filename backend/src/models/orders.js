@@ -4,7 +4,8 @@ const { Model } = require("sequelize");
 const ORDER_STATUS = {
   PENDING: "pending",
   CONFIRMED: "confirmed",
-  IN_TRANSIT: "in_transit",
+  PREPARING: "preparing",
+  OUT_FOR_DELIVERY: "out_for_delivery",
   DELIVERED: "delivered",
   CANCELLED: "cancelled",
 };
@@ -22,6 +23,12 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "user_id",
         as: "user",
         onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+      });
+      Order.belongsTo(models.AddressUser, {
+        foreignKey: "shipping_address_id",
+        as: "shippingAddress",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
       });
       Order.hasMany(models.OrderItem, { foreignKey: "order_id", as: "items" });
@@ -50,6 +57,19 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: true,
       },
+      shipping_address_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      shipping_address_snapshot: {
+        type: DataTypes.JSON,
+        allowNull: false,
+      },
+      invoice_number: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        unique: true,
+      },
       total_price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
@@ -67,9 +87,18 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM(...Object.values(PAYMENT_STATUS)),
         defaultValue: PAYMENT_STATUS.UNPAID,
       },
-      delivery_date: {
-        type: DataTypes.DATE,
+      delivery_slot: {
+        type: DataTypes.ENUM("morning", "evening"),
         allowNull: false,
+        defaultValue: "morning",
+      },
+      delivery_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+      },
+      notes: {
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
     },
     {
@@ -78,7 +107,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "orders",
       timestamps: true,
       underscored: true,
-    }
+    },
   );
 
   Order.ORDER_STATUS = ORDER_STATUS;
