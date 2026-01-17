@@ -83,10 +83,18 @@ module.exports = {
       updated_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
+
+    await queryInterface.addIndex(
+      "product_variants",
+      ["product_id", "is_active"],
+      {
+        name: "product_variants_product_id_is_active_idx",
+      },
+    );
   },
 
   down: async (queryInterface, Sequelize) => {

@@ -100,7 +100,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "users",
       timestamps: true,
       underscored: true,
-    }
+    },
   );
 
   User.USER_TYPES = USER_TYPES;

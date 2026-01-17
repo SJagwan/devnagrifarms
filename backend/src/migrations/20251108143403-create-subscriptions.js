@@ -19,44 +19,61 @@ module.exports = {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
       },
+      shipping_address_id: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: "address_user",
+          key: "id",
+        },
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+        comment: "Where this subscription delivers to",
+      },
       subscription_name: {
         type: Sequelize.STRING(100),
         allowNull: true,
       },
       status: {
-        type: Sequelize.ENUM("active", "paused", "cancelled", "expired"),
+        type: Sequelize.ENUM("active", "paused", "cancelled"),
         allowNull: false,
         defaultValue: "active",
       },
       start_date: {
-        type: Sequelize.DATE,
+        type: Sequelize.DATEONLY,
         allowNull: false,
       },
       end_date: {
-        type: Sequelize.DATE,
+        type: Sequelize.DATEONLY,
         allowNull: true,
+        comment: "Optional fixed end date",
       },
       schedule_type: {
-        type: Sequelize.ENUM("d", "w", "a", "c"),
+        type: Sequelize.ENUM("d", "a", "w", "c"),
         allowNull: false,
         defaultValue: "d",
+        comment: "d=daily, a=alternate, w=weekly, c=custom",
       },
       schedule_details: {
         type: Sequelize.JSON,
         allowNull: true,
-        comment: "User-selected days/dates and optional quantity per day",
+        comment: "For weekly: weekdays array. For custom: specific dates.",
       },
-      next_delivery_date: {
-        type: Sequelize.DATE,
+      skip_dates: {
+        type: Sequelize.JSON,
         allowNull: true,
-        comment: "Optional: calculated by the system for scheduler efficiency",
+        comment: "Array of dates to skip delivery (vacation mode)",
       },
-      auto_renew: {
-        type: Sequelize.BOOLEAN,
+      delivery_slot: {
+        type: Sequelize.ENUM("morning", "evening"),
         allowNull: false,
-        defaultValue: false,
-        comment:
-          "If true, subscription will automatically renew after end_date",
+        defaultValue: "morning",
+        comment: "Preferred delivery time: morning (6-9 AM), evening (5-8 PM)",
+      },
+      paused_until: {
+        type: Sequelize.DATEONLY,
+        allowNull: true,
+        comment: "If paused, auto-resume on this date",
       },
       created_at: {
         type: Sequelize.DATE,
@@ -65,10 +82,21 @@ module.exports = {
       updated_at: {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
+
+    await queryInterface.addIndex("subscriptions", ["user_id"], {
+      name: "subscriptions_user_id_idx",
+    });
+    await queryInterface.addIndex(
+      "subscriptions",
+      ["status", "schedule_type"],
+      {
+        name: "subscriptions_status_schedule_type_idx",
+      },
+    );
   },
 
   down: async (queryInterface, Sequelize) => {
