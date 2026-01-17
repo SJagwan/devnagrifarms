@@ -2,58 +2,58 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable("order_items", {
+    await queryInterface.createTable("payments", {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
         allowNull: false,
       },
-      order_id: {
+      user_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
-          model: "orders",
+          model: "users",
           key: "id",
         },
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
       },
-      product_variant_id: {
-        type: Sequelize.UUID,
-        allowNull: false,
-        references: {
-          model: "product_variants",
-          key: "id",
-        },
-        onDelete: "RESTRICT",
-        onUpdate: "CASCADE",
-      },
-      quantity: {
+      amount: {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
       },
-      price: {
-        type: Sequelize.DECIMAL(10, 2),
+      currency: {
+        type: Sequelize.STRING(3),
         allowNull: false,
+        defaultValue: "INR",
       },
-      tax_percent: {
-        type: Sequelize.DECIMAL(5, 2),
+      gateway_id: {
+        type: Sequelize.ENUM("razorpay", "phonepe"),
         allowNull: false,
-        defaultValue: 0,
+        defaultValue: "razorpay",
       },
-      tax_amount: {
-        type: Sequelize.DECIMAL(10, 2),
-        allowNull: false,
-        defaultValue: 0,
-      },
-      discount_percent: {
-        type: Sequelize.DECIMAL(5, 2),
+      gateway_order_id: {
+        type: Sequelize.STRING(100),
         allowNull: true,
       },
-      total_price: {
-        type: Sequelize.DECIMAL(10, 2),
+      gateway_payment_id: {
+        type: Sequelize.STRING(100),
+        allowNull: true,
+      },
+      status: {
+        type: Sequelize.ENUM("pending", "success", "failed", "refunded"),
         allowNull: false,
+        defaultValue: "pending",
+      },
+      method: {
+        type: Sequelize.STRING(50),
+        allowNull: true,
+        comment: "upi, card, netbanking, etc.",
+      },
+      raw_response: {
+        type: Sequelize.JSON,
+        allowNull: true,
       },
       created_at: {
         type: Sequelize.DATE,
@@ -66,9 +66,12 @@ module.exports = {
         ),
       },
     });
+
+    await queryInterface.addIndex("payments", ["user_id"]);
+    await queryInterface.addIndex("payments", ["gateway_order_id"]);
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable("order_items");
+    await queryInterface.dropTable("payments");
   },
 };

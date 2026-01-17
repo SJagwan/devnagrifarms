@@ -65,6 +65,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.JSON,
         allowNull: false,
       },
+      invoice_number: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        unique: true,
+      },
       total_price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,

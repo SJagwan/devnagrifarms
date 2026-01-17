@@ -37,6 +37,16 @@ module.exports = (sequelize, DataTypes) => {
         as: "refreshTokens",
         onDelete: "CASCADE",
       });
+
+      User.hasMany(models.WalletTransaction, {
+        foreignKey: "user_id",
+        as: "walletTransactions",
+      });
+
+      User.hasMany(models.Payment, {
+        foreignKey: "user_id",
+        as: "payments",
+      });
     }
   }
 
@@ -92,6 +102,11 @@ module.exports = (sequelize, DataTypes) => {
       otp_expires_at: {
         type: DataTypes.DATE,
         allowNull: true,
+      },
+      wallet_balance: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0.0,
       },
     },
     {

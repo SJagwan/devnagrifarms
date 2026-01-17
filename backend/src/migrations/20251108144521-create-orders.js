@@ -44,7 +44,12 @@ module.exports = {
       shipping_address_snapshot: {
         type: Sequelize.JSON,
         allowNull: false,
-        comment: "Frozen copy of address at order time (immutable)",
+        comment: "Snapshot of the address at time of order",
+      },
+      invoice_number: {
+        type: Sequelize.STRING(50),
+        allowNull: true,
+        unique: true,
       },
       total_price: {
         type: Sequelize.DECIMAL(10, 2),

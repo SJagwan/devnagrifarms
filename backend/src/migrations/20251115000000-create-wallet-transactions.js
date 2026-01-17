@@ -2,49 +2,55 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable("subscription_items", {
+    await queryInterface.createTable("wallet_transactions", {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
         allowNull: false,
       },
-      subscription_id: {
+      user_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
-          model: "subscriptions",
+          model: "users",
           key: "id",
         },
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
       },
-      product_variant_id: {
+      amount: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        comment: "Positive for credit, negative for debit",
+      },
+      type: {
+        type: Sequelize.ENUM(
+          "deposit",
+          "purchase",
+          "refund",
+          "withdrawal",
+          "adjustment",
+        ),
+        allowNull: false,
+      },
+      balance_after: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        comment: "Running balance snapshot after this transaction",
+      },
+      reference_id: {
         type: Sequelize.UUID,
-        allowNull: false,
-        references: {
-          model: "product_variants",
-          key: "id",
-        },
-        onDelete: "RESTRICT",
-        onUpdate: "CASCADE",
+        allowNull: true,
+        comment: "ID of the related Order or Payment",
       },
-      quantity: {
-        type: Sequelize.DECIMAL(10, 2),
-        allowNull: false,
-        defaultValue: 1,
+      reference_type: {
+        type: Sequelize.STRING(50),
+        allowNull: true,
+        comment: "'order' or 'payment'",
       },
-      price: {
-        type: Sequelize.DECIMAL(10, 2),
-        allowNull: false,
-      },
-      tax_percent: {
-        type: Sequelize.DECIMAL(5, 2),
-        allowNull: false,
-        defaultValue: 0,
-      },
-      discount_percent: {
-        type: Sequelize.DECIMAL(5, 2),
+      description: {
+        type: Sequelize.STRING(255),
         allowNull: true,
       },
       created_at: {
@@ -58,9 +64,11 @@ module.exports = {
         ),
       },
     });
+
+    await queryInterface.addIndex("wallet_transactions", ["user_id"]);
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable("subscription_items");
+    await queryInterface.dropTable("wallet_transactions");
   },
 };
