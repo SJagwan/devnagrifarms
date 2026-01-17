@@ -12,37 +12,137 @@ const api = axios.create({
   },
 });
 
+// Refresh handling state
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((p) => {
+    if (error) {
+      p.reject(error);
+    } else {
+      p.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Helper to mask sensitive fields in request body for logging
+const maskSensitiveData = (data) => {
+  if (!data || typeof data !== "object") return data;
+  const masked = { ...data };
+  const sensitiveFields = [
+    "password",
+    "otp",
+    "otp_code",
+    "token",
+    "refreshToken",
+  ];
+  sensitiveFields.forEach((field) => {
+    if (masked[field]) masked[field] = "***REDACTED***";
+  });
+  return masked;
+};
+
 api.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Debug Logging
-  console.log(`🚀 [API REQ] ${config.method?.toUpperCase()} ${config.url}`);
-  if (config.data)
-    console.log("📦 Body:", JSON.stringify(config.data, null, 2));
+  // Debug Logging (dev only, with sensitive data masked)
+  if (__DEV__) {
+    console.log(`🚀 [API REQ] ${config.method?.toUpperCase()} ${config.url}`);
+    if (config.data) {
+      console.log(
+        "📦 Body:",
+        JSON.stringify(maskSensitiveData(config.data), null, 2),
+      );
+    }
+  }
 
   return config;
 });
 
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ [API RES] ${response.status} ${response.config.url}`);
-    // Optional: Log response data (can be noisy)
-    // console.log("DATA:", JSON.stringify(response.data, null, 2));
+    if (__DEV__) {
+      console.log(`✅ [API RES] ${response.status} ${response.config.url}`);
+    }
     return response;
   },
-  (error) => {
-    console.log(`❌ [API ERR] ${error.config?.url} - ${error.message}`);
-    if (error.response) {
-      console.log(
-        "🔴 Error Data:",
-        JSON.stringify(error.response.data, null, 2)
-      );
+  async (error) => {
+    const originalRequest = error.config || {};
+    const status = error?.response?.status;
+
+    if (__DEV__) {
+      console.log(`❌ [API ERR] ${error.config?.url} - ${error.message}`);
+      if (error.response) {
+        console.log(
+          "🔴 Error Data:",
+          JSON.stringify(error.response.data, null, 2),
+        );
+      }
     }
+
+    // If unauthorized, try token refresh once
+    if (status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      if (isRefreshing) {
+        // Queue requests while refresh in-flight
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: (token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(api(originalRequest));
+            },
+            reject,
+          });
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const refreshToken = await SecureStore.getItemAsync("refreshToken");
+        if (!refreshToken) throw new Error("No refresh token");
+
+        const { data } = await axios.post(
+          `${API_URL}/auth/refresh`,
+          { refreshToken },
+          { headers: { "Content-Type": "application/json" } },
+        );
+
+        const newAccessToken = data?.accessToken;
+        const newRefreshToken = data?.refreshToken || refreshToken;
+        if (!newAccessToken) throw new Error("No access token from refresh");
+
+        // Store new tokens
+        await SecureStore.setItemAsync("accessToken", newAccessToken);
+        if (newRefreshToken !== refreshToken) {
+          await SecureStore.setItemAsync("refreshToken", newRefreshToken);
+        }
+
+        processQueue(null, newAccessToken);
+
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        // Clear tokens - user needs to re-login
+        await SecureStore.deleteItemAsync("accessToken");
+        await SecureStore.deleteItemAsync("refreshToken");
+        await SecureStore.deleteItemAsync("user");
+        // Note: Navigation to login should be handled by AuthContext
+        return Promise.reject(refreshErr);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
     return Promise.reject(error);
-  }
+  },
 );
 
 export const authAPI = {

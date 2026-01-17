@@ -1,4 +1,5 @@
-const { RefreshToken, User } = require("../models");
+const { RefreshToken, User, Sequelize } = require("../models");
+const { Op } = Sequelize;
 const bcrypt = require("bcrypt");
 
 const {
@@ -103,8 +104,12 @@ const refreshAccessToken = async (refreshToken, ipAddress) => {
 
   if (!stored) throw new Error("Invalid or expired refresh token");
 
-  const accessToken = generateAccessToken(stored.user_id);
-  return { accessToken };
+  // Revoke the old token (Rotation)
+  stored.revoked = true;
+  await stored.save();
+
+  // Issue new tokens
+  return await createTokens(stored.user_id, ipAddress);
 };
 
 const logoutUser = async (refreshToken) => {

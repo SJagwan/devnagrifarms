@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import HomeHeader from "@features/home/components/HomeHeader";
-import ProductCard from "@features/product/components/ProductCard";
+import ProductCard from "@features/product-variant/components/ProductCard";
 
 // Mock Data
 const CATEGORIES = [
