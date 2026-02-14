@@ -59,6 +59,15 @@ Follows Expo Router conventions.
     *   `apiClient.js`: **Critical**. Axios instance with Request/Response interceptors for JWT injection and Refresh Token logic.
 *   `context/`: Global providers (AuthContext).
 
+## 📊 Feature Implementation Status
+| Feature | Status | Details |
+| :--- | :--- | :--- |
+| **Authentication** | ✅ Complete | Login, OTP Verification, Auto-login. |
+| **Browsing** | ✅ Complete | Home Feed, Categories, Product Details. |
+| **Cart** | ⚠️ Partial | UI Scaffolding exists, but needs logic verification. |
+| **Checkout** | ❌ Missing | No Payment integration or Order placement flow. |
+| **Order History** | ❌ Missing | No Past Orders screen. |
+
 ## 🤝 Development Conventions
 
 *   **Routing:** STRICTLY use Expo Router (`router.push`, `Link`). Do not use React Navigation directly.

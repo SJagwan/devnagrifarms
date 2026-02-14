@@ -107,6 +107,18 @@ The API is prefixed with `/api` and organized into modules:
 - `/api/public`: Publicly accessible data (if any).
 - `/api/health`: Health check endpoint.
 
+## 📊 Current API Status
+| Module | Status | Notes |
+| :--- | :--- | :--- |
+| **Auth** | ✅ Complete | Login, Register, Refresh Token, Role-based Middleware. |
+| **Catalog** | ✅ Complete | Categories, Products, Variants (CRUD + List). |
+| **Serviceability** | ✅ Complete | Polygon-based area management & point-in-polygon checks. |
+| **Storage** | ✅ Complete | AWS S3 Presigned URL generation. |
+| **Orders** | ❌ Missing | Models exist, but no Controllers/Routes. |
+| **Subscriptions** | ❌ Missing | Models exist, but no logic implemented. |
+| **Payments** | ❌ Missing | Models exist, but no gateway integration. |
+| **User Management** | ⚠️ Partial | Basic profile fetching. No update or admin list views. |
+
 ## 🤝 Development Conventions
 - **Naming:** CamelCase for variables/functions, PascalCase for classes/models.
 - **Async Handling:** Use `asyncHandler` wrapper for controllers to catch errors automatically.

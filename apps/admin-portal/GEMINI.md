@@ -48,8 +48,17 @@ VITE_API_BASE_URL=http://localhost:4000/api
 *   `src/pages/`: Main application views/routes.
 *   `src/routes/`: Route definitions (`protectedRoutes`).
 
+## 📊 Feature Implementation Status
+| Feature | Status | Details |
+| :--- | :--- | :--- |
+| **Authentication** | ✅ Complete | Login page, Token storage, Protected Routes. |
+| **Catalog** | ✅ Complete | Product & Category CRUD, Variant Management. |
+| **Serviceability** | ✅ Complete | Map-based Zone Editor (Leaflet). |
+| **Orders** | ❌ Missing | No dashboard or order list views. |
+| **Customers** | ❌ Missing | No customer list or details view. |
+
 ## 🤝 Development Conventions
-*   **Auth Flow:** The app uses a JWT-based auth flow with automatic refresh tokens handling in `src/lib/api/http.js`.
-*   **Error Handling:** Global error handling is implemented in the Axios interceptor, displaying toast notifications for errors.
-*   **Maps:** Serviceable areas are managed using Leaflet. Ensure map components are properly lazy-loaded or handled if SSR is ever introduced (though this is currently a SPA).
-*   **Styling:** Utility-first CSS with Tailwind v4. Use `@headlessui/react` for accessible interactive components (Dropdowns, Dialogs).
+- **Auth Flow:** The app uses a JWT-based auth flow with automatic refresh tokens handling in `src/lib/api/http.js`.
+- **Error Handling:** Global error handling is implemented in the Axios interceptor, displaying toast notifications for errors.
+- **Maps:** Serviceable areas are managed using Leaflet. Ensure map components are properly lazy-loaded or handled if SSR is ever introduced (though this is currently a SPA).
+- **Styling:** Utility-first CSS with Tailwind v4. Use `@headlessui/react` for accessible interactive components (Dropdowns, Dialogs).

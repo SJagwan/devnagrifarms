@@ -32,6 +32,39 @@ The project is organized into three main components:
 
 ---
 
+## 📊 Current Project Status
+
+### ✅ Backend (API)
+*   **Auth:** Complete (JWT, Refresh Tokens).
+*   **Catalog:** Complete (Categories, Products, Variants).
+*   **Serviceable Areas:** Complete (CRUD, Geo-checks).
+*   **Storage:** Complete (S3 Presigned URLs).
+*   **🚧 Missing:**
+    *   **Orders:** Models exist, but no Controllers/Routes.
+    *   **Subscriptions:** Models exist, but no logic.
+    *   **Payments/Wallet:** Models exist, but no integration.
+    *   **Customer Profile:** Basic placeholder only.
+
+### ✅ Admin Portal (Web)
+*   **Auth:** Login flow integrated.
+*   **Catalog Management:** Full CRUD for Products & Categories.
+*   **Serviceability:** Interactive Map Editor for delivery zones.
+*   **🚧 Missing:**
+    *   **Order Management:** Dashboard & Detail views.
+    *   **Customer Management:** List & User details.
+    *   **Subscription Management.**
+
+### ✅ Customer App (Mobile)
+*   **Auth:** Login/OTP flow.
+*   **Browsing:** Home, Product Listing, Product Details.
+*   **Serviceability:** Location check logic.
+*   **🚧 Missing:**
+    *   **Cart:** UI scaffolding exists, but logic needs verification.
+    *   **Checkout:** No payment flow.
+    *   **Orders:** History & Tracking screens.
+
+---
+
 ## 🚀 Getting Started
 
 ### Backend Setup
