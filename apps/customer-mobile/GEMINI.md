@@ -64,8 +64,8 @@ Follows Expo Router conventions.
 | :--- | :--- | :--- |
 | **Authentication** | ✅ Complete | Login, OTP Verification, Auto-login. |
 | **Browsing** | ✅ Complete | Home Feed, Categories, Product Details. |
-| **Cart** | ⚠️ Partial | UI Scaffolding exists, but needs logic verification. |
-| **Checkout** | ❌ Missing | No Payment integration or Order placement flow. |
+| **Cart** | ✅ Complete | Context, Add/Remove items, Persistence (AsyncStorage). |
+| **Checkout** | ✅ Complete | Address selection, Order placement API integration. |
 | **Order History** | ❌ Missing | No Past Orders screen. |
 
 ## 🤝 Development Conventions
@@ -75,6 +75,31 @@ Follows Expo Router conventions.
 *   **API:** Import the `api` instance from `@lib/apiClient`. Do not make raw `axios` calls.
 *   **Auth:** `AuthContext` handles the "is logged in" state. The `apiClient` handles the actual token storage and refreshing transparently.
 *   **Path Aliases:** configured in `babel.config.js` (e.g., `@lib` -> `./src/lib`).
+*   **Folder Structure:** STRICTLY keep the `app/` folder logic-free. Files in `app/` should only be route wrappers that export screens from `src/features/` or `src/screens/`. All business logic and UI components MUST reside in `src/`.
+
+## ⚠️ Critical: NativeWind v4 + Dynamic className Bug
+
+**Known Issue (NativeWind v4 GitHub #1516, #1536, #1557):** Using dynamic `className` with template literals/conditionals on `Pressable` or `TouchableOpacity` causes a **"Couldn't find a navigation context"** crash. NativeWind v4's CssInterop reprocesses dynamic className on re-render and breaks React Navigation's context propagation.
+
+### The Rule
+**NEVER use dynamic/conditional `className` on interactive components (`Pressable`, `TouchableOpacity`).** Use static `className` for layout + `style` prop for dynamic values.
+
+```jsx
+// ❌ BAD — will crash with navigation context error
+<TouchableOpacity className={`p-4 rounded-xl ${selected ? "bg-green-600" : "bg-white"}`}>
+
+// ✅ GOOD — static className + dynamic style
+<Pressable
+  className="p-4 rounded-xl"
+  style={{ backgroundColor: selected ? "#16a34a" : "white" }}
+>
+```
+
+### Additional Rules
+*   **Use `Pressable` instead of `TouchableOpacity`** — `Pressable` is a core RN component not wrapped by NativeWind's CssInterop.
+*   **`View`, `Text`, `ScrollView` with dynamic `className` are safe** — the bug primarily affects touchable/pressable components.
+*   **Static `className` on any component is always safe** — only dynamic template literals trigger the issue.
+*   **Shared `Button.js` component** uses `Pressable` with style-based variants (not dynamic className) — always use it for buttons.
 
 ## 🔑 Key Files
 *   `src/lib/apiClient.js`: Handles all HTTP communication, token rotation, and logging.

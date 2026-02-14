@@ -2,7 +2,7 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   TextInput,
   ScrollView,
@@ -56,7 +56,7 @@ export default function ProductsScreen() {
   };
 
   const renderProductCard = ({ item }) => (
-    <TouchableOpacity
+    <Pressable
       onPress={() => handleProductPress(item)}
       className="flex-1 m-2 bg-white rounded-2xl overflow-hidden border border-gray-100"
       style={{
@@ -96,29 +96,28 @@ export default function ProductsScreen() {
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   const renderCategoryChip = (category) => {
     const isSelected = selectedCategory === category.id;
     return (
-      <TouchableOpacity
+      <Pressable
         key={category.id}
         onPress={() => setSelectedCategory(isSelected ? null : category.id)}
-        className={`px-4 py-2 rounded-full mr-2 border ${
-          isSelected
-            ? "bg-green-600 border-green-600"
-            : "bg-white border-gray-200"
-        }`}
+        className="px-4 py-2 rounded-full mr-2 border"
+        style={{
+          backgroundColor: isSelected ? "#16a34a" : "white",
+          borderColor: isSelected ? "#16a34a" : "#e5e7eb",
+        }}
       >
         <Text
-          className={`text-sm font-medium ${
-            isSelected ? "text-white" : "text-gray-700"
-          }`}
+          className="text-sm font-medium"
+          style={{ color: isSelected ? "white" : "#374151" }}
         >
           {category.name}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -148,9 +147,9 @@ export default function ProductsScreen() {
             placeholderTextColor="#9CA3AF"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
+            <Pressable onPress={() => setSearchQuery("")}>
               <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       </View>
@@ -163,22 +162,21 @@ export default function ProductsScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 16 }}
           >
-            <TouchableOpacity
+            <Pressable
               onPress={() => setSelectedCategory(null)}
-              className={`px-4 py-2 rounded-full mr-2 border ${
-                selectedCategory === null
-                  ? "bg-green-600 border-green-600"
-                  : "bg-white border-gray-200"
-              }`}
+              className="px-4 py-2 rounded-full mr-2 border"
+              style={{
+                backgroundColor: selectedCategory === null ? "#16a34a" : "white",
+                borderColor: selectedCategory === null ? "#16a34a" : "#e5e7eb",
+              }}
             >
               <Text
-                className={`text-sm font-medium ${
-                  selectedCategory === null ? "text-white" : "text-gray-700"
-                }`}
+                className="text-sm font-medium"
+                style={{ color: selectedCategory === null ? "white" : "#374151" }}
               >
                 All
               </Text>
-            </TouchableOpacity>
+            </Pressable>
             {categories.map(renderCategoryChip)}
           </ScrollView>
         </View>

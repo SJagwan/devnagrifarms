@@ -1,5 +1,18 @@
-import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
-import { styled } from "nativewind";
+import { Pressable, Text, ActivityIndicator } from "react-native";
+
+const VARIANT_STYLES = {
+  primary: { backgroundColor: "#16a34a" },
+  outline: { backgroundColor: "transparent", borderWidth: 1, borderColor: "#16a34a" },
+  secondary: { backgroundColor: "#e5e7eb" },
+  danger: { backgroundColor: "transparent", borderWidth: 1, borderColor: "#ef4444" },
+};
+
+const TEXT_COLORS = {
+  primary: "#ffffff",
+  outline: "#16a34a",
+  secondary: "#1f2937",
+  danger: "#ef4444",
+};
 
 export default function Button({
   onPress,
@@ -7,38 +20,31 @@ export default function Button({
   loading = false,
   disabled = false,
   variant = "primary",
-  className = "",
+  style,
 }) {
-  const baseStyle = "py-3 rounded-lg flex-row justify-center items-center";
-  const variants = {
-    primary: "bg-green-600",
-    outline: "bg-transparent border border-green-600",
-    secondary: "bg-gray-200",
-    danger: "bg-transparent border border-red-500",
-  };
-
-  const textStyle = {
-    primary: "text-white font-semibold text-lg",
-    outline: "text-green-600 font-semibold text-lg",
-    secondary: "text-gray-800 font-semibold text-lg",
-    danger: "text-red-500 font-semibold text-lg",
-  };
-
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      className={`${baseStyle} ${variants[variant]} ${
-        disabled ? "opacity-50" : ""
-      } ${className}`}
+      className="py-3 rounded-lg flex-row justify-center items-center"
+      style={[
+        VARIANT_STYLES[variant],
+        disabled && { opacity: 0.5 },
+        style,
+      ]}
     >
       {loading ? (
         <ActivityIndicator
           color={variant === "outline" ? "#16a34a" : "white"}
         />
       ) : (
-        <Text className={textStyle[variant]}>{title}</Text>
+        <Text
+          className="font-semibold text-lg"
+          style={{ color: TEXT_COLORS[variant] }}
+        >
+          {title}
+        </Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }

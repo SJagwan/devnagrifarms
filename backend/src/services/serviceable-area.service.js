@@ -14,9 +14,8 @@ const getAllServiceableAreas = async (query) => {
     sortDir: sortDir === "DESC" ? "DESC" : "ASC",
   };
 
-  const { rows, count } = await serviceableAreaRepo.getServiceableAreasPaged(
-    repoQuery
-  );
+  const { rows, count } =
+    await serviceableAreaRepo.getServiceableAreasPaged(repoQuery);
 
   const totalPages = Math.ceil(count / repoQuery.limit) || 1;
   return {
@@ -85,15 +84,21 @@ const deleteServiceableArea = async (id) => {
  */
 const checkPointServiceability = async ({ lat, lng, pincode }) => {
   // TODO: Implement actual Polygon check using Sequelize.fn('ST_Within', ...) or similar
-  // For the MVP demo, we will check if ANY serviceable area exists and just return that it is serviceable for demo purposes,
-  // OR if we want to be stricter, we can implement the ray-casting algorithm in JS if the number of areas is small.
+  // For the MVP demo, we will check if ANY serviceable area exists.
 
-  // Let's implement a simple robust check:
   // 1. Get all active areas
   const areas = await serviceableAreaRepo.getAllActiveAreas();
 
-  if (!areas || areas.length === 0) {
-    return { serviceable: false, message: "No active service areas found." };
+  // DEV MODE FALLBACK: If no areas defined, assume serviceable everywhere for testing
+  // SAFETY: Only allow this in development environment
+  if (
+    (!areas || areas.length === 0) &&
+    process.env.NODE_ENV === "development"
+  ) {
+    console.warn(
+      "⚠️ No serviceable areas defined. Allowing location (DEV MODE).",
+    );
+    return { serviceable: true, message: "Serviceable (Dev Mode)" };
   }
 
   // If pincode matches name or some field? (optional)
@@ -106,10 +111,35 @@ const checkPointServiceability = async ({ lat, lng, pincode }) => {
   if (lat && lng) {
     const point = [Number(lat), Number(lng)];
     for (const area of areas) {
-      if (area.coordinates && isPointInPolygon(point, area.coordinates)) {
+      let polygon = [];
+      // Handle Sequelize GeoJSON format (nested coordinates)
+      // MySQL Polygon: { type: 'Polygon', coordinates: [ [ [x, y], ... ] ] }
+      if (
+        area.coordinates &&
+        area.coordinates.coordinates &&
+        area.coordinates.coordinates.length > 0
+      ) {
+        polygon = area.coordinates.coordinates[0];
+      } else if (Array.isArray(area.coordinates)) {
+        // Fallback for raw JSON array if used
+        polygon = area.coordinates;
+      }
+
+      // GeoJSON is [lng, lat], but our ray-casting expects [lat, lng] or we swap?
+      // ST_GeomFromText('POLYGON((lng lat, ...))') -> MySQL stores as X(lng) Y(lat).
+      // Sequelize/MySQL generic geometry usually returns coordinates as [x, y] => [lng, lat].
+      // My isPointInPolygon uses point[0] as x(lat?) and point[1] as y(lng?).
+      // Wait, isPointInPolygon vars are: x = point[0], y = point[1].
+      // If point passed is [lat, lng], then x=lat, y=lng.
+      // GeoJSON coordinates are [lng, lat].
+      // So we need to ensure we compare correctly.
+      // Let's swap the polygon coordinates to [lat, lng] for the check.
+
+      const polygonLatLng = polygon.map((p) => [p[1], p[0]]);
+
+      if (isPointInPolygon(point, polygonLatLng)) {
         return { serviceable: true, area: area };
       }
-      // Fail-safe: if no coordinates but area exists, maybe allow? No, strict.
     }
   }
 

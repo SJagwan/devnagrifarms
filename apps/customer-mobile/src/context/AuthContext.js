@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
-import { useRouter, useSegments } from "expo-router";
 
 const AuthContext = createContext({});
 
@@ -11,8 +10,6 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const segments = useSegments();
-  const router = useRouter();
 
   useEffect(() => {
     checkUser();
@@ -46,7 +43,6 @@ export function AuthProvider({ children }) {
     await SecureStore.deleteItemAsync("accessToken");
     await SecureStore.deleteItemAsync("refreshToken");
     setUser(null);
-    router.replace("/auth/login");
   };
 
   return (

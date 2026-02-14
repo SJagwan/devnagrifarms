@@ -39,10 +39,11 @@ The project is organized into three main components:
 *   **Catalog:** Complete (Categories, Products, Variants).
 *   **Serviceable Areas:** Complete (CRUD, Geo-checks).
 *   **Storage:** Complete (S3 Presigned URLs).
+*   **Orders:** ✅ Complete (Placement logic, Inventory checks).
+*   **Addresses:** ✅ Complete (CRUD).
+*   **Subscriptions:** ⚠️ Partial (Logic implemented, Payment integration pending).
 *   **🚧 Missing:**
-    *   **Orders:** Models exist, but no Controllers/Routes.
-    *   **Subscriptions:** Models exist, but no logic.
-    *   **Payments/Wallet:** Models exist, but no integration.
+    *   **Payments/Wallet:** Models exist, but no gateway integration.
     *   **Customer Profile:** Basic placeholder only.
 
 ### ✅ Admin Portal (Web)
@@ -58,10 +59,11 @@ The project is organized into three main components:
 *   **Auth:** Login/OTP flow.
 *   **Browsing:** Home, Product Listing, Product Details.
 *   **Serviceability:** Location check logic.
+*   **Cart:** ✅ Complete (Context, Persistence).
+*   **Checkout:** ✅ Complete (Address selection, Order placement).
+*   **Orders:** ⚠️ Partial (Order Success screen only, History pending).
 *   **🚧 Missing:**
-    *   **Cart:** UI scaffolding exists, but logic needs verification.
-    *   **Checkout:** No payment flow.
-    *   **Orders:** History & Tracking screens.
+    *   **Payments:** No Payment Gateway integration.
 
 ---
 

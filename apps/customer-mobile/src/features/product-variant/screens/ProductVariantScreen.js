@@ -2,7 +2,7 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Alert,
 } from "react-native";
@@ -10,13 +10,16 @@ import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { customerAPI } from "@lib/api";
+import { useCart } from "@context/CartContext";
 
 export default function ProductVariantScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [variants, setVariants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [quantities, setQuantities] = useState({});
 
   useEffect(() => {
     fetchData();
@@ -39,15 +42,26 @@ export default function ProductVariantScreen() {
     }
   };
 
-  const handleAddToPlan = (variant) => {
-    // TODO: Add to subscription plan context
-    Alert.alert(
-      "Coming Soon",
-      `Add ${product.name} (${variant.quantity}${variant.unit}) to your plan`,
-    );
+  const getQty = (variantId, minQty) => quantities[variantId] || minQty || 1;
+
+  const setQty = (variantId, qty) => {
+    setQuantities((prev) => ({ ...prev, [variantId]: qty }));
+  };
+
+  const handleAddToCart = (variant) => {
+    const minQty = variant.min_order_qty || 1;
+    const qty = getQty(variant.id, minQty);
+    const variantWithProduct = {
+      ...variant,
+      product: { name: product.name },
+    };
+    addToCart(variantWithProduct, qty);
+    Alert.alert("Success", `${product.name} (×${qty}) added to cart`);
+    setQty(variant.id, minQty);
   };
 
   const formatPrice = (price) => {
+    if (price == null || isNaN(price)) return "₹0";
     return `₹${parseFloat(price).toFixed(0)}`;
   };
 
@@ -125,7 +139,7 @@ export default function ProductVariantScreen() {
         </View>
 
         {/* Price Row */}
-        <View className="flex-row items-center justify-between pt-3 border-t border-gray-100">
+        <View className="flex-row items-center justify-between pt-3 border-t border-gray-100 mb-3">
           <View className="flex-row items-baseline">
             <Text className="text-xl font-bold text-green-600">
               {formatPrice(variant.price)}
@@ -137,22 +151,73 @@ export default function ProductVariantScreen() {
                 </Text>
               )}
           </View>
+        </View>
 
-          {/* Add to Plan Button */}
-          <TouchableOpacity
-            onPress={() => handleAddToPlan(variant)}
-            className="bg-green-600 flex-row items-center px-4 py-2.5 rounded-xl"
-            style={{
-              shadowColor: "#16a34a",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 4,
-            }}
+        {/* Quantity Selector */}
+        {(() => {
+          const minQty = variant.min_order_qty || 1;
+          const maxQty = variant.max_order_qty;
+          const qty = getQty(variant.id, minQty);
+          return (
+            <View className="flex-row items-center justify-center mb-3 bg-gray-50 rounded-xl py-2">
+              <Pressable
+                onPress={() => setQty(variant.id, Math.max(minQty, qty - 1))}
+                disabled={qty <= minQty}
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{
+                  backgroundColor: qty <= minQty ? "#e5e7eb" : "white",
+                  borderWidth: qty <= minQty ? 0 : 1,
+                  borderColor: "#d1d5db",
+                }}
+              >
+                <Ionicons name="remove" size={20} color={qty <= minQty ? "#9CA3AF" : "#111827"} />
+              </Pressable>
+              <Text className="mx-6 text-lg font-bold text-gray-900">{qty}</Text>
+              <Pressable
+                onPress={() => setQty(variant.id, maxQty ? Math.min(maxQty, qty + 1) : qty + 1)}
+                disabled={maxQty && qty >= maxQty}
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{
+                  backgroundColor: maxQty && qty >= maxQty ? "#e5e7eb" : "white",
+                  borderWidth: maxQty && qty >= maxQty ? 0 : 1,
+                  borderColor: "#d1d5db",
+                }}
+              >
+                <Ionicons name="add" size={20} color={maxQty && qty >= maxQty ? "#9CA3AF" : "#111827"} />
+              </Pressable>
+            </View>
+          );
+        })()}
+
+        {/* Actions Row */}
+        <View className="flex-row gap-3">
+          {/* Add to Cart Button */}
+          <Pressable
+            onPress={() => handleAddToCart(variant)}
+            className="flex-1 bg-white border border-green-600 flex-row items-center justify-center px-4 py-3 rounded-xl"
           >
-            <Ionicons name="add" size={18} color="white" />
-            <Text className="text-white font-semibold ml-1">Add to Plan</Text>
-          </TouchableOpacity>
+            <Ionicons name="cart-outline" size={20} color="#16a34a" />
+            <Text className="text-green-600 font-bold ml-2">Add to Cart</Text>
+          </Pressable>
+
+          {/* Subscribe Button */}
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/subscription/setup",
+                params: {
+                  variantId: variant.id,
+                  productName: product.name,
+                  unit: variant.unit,
+                  price: variant.price,
+                },
+              })
+            }
+            className="flex-1 bg-green-600 flex-row items-center justify-center px-4 py-3 rounded-xl shadow-sm"
+          >
+            <Ionicons name="calendar-outline" size={20} color="white" />
+            <Text className="text-white font-bold ml-2">Subscribe</Text>
+          </Pressable>
         </View>
 
         {/* Order Limits */}

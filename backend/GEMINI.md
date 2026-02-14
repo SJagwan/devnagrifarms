@@ -114,7 +114,8 @@ The API is prefixed with `/api` and organized into modules:
 | **Catalog** | ✅ Complete | Categories, Products, Variants (CRUD + List). |
 | **Serviceability** | ✅ Complete | Polygon-based area management & point-in-polygon checks. |
 | **Storage** | ✅ Complete | AWS S3 Presigned URL generation. |
-| **Orders** | ❌ Missing | Models exist, but no Controllers/Routes. |
+| **Orders** | ✅ Complete | Order placement logic with inventory checks implemented. |
+| **Addresses** | ✅ Complete | Address CRUD for customers. |
 | **Subscriptions** | ❌ Missing | Models exist, but no logic implemented. |
 | **Payments** | ❌ Missing | Models exist, but no gateway integration. |
 | **User Management** | ⚠️ Partial | Basic profile fetching. No update or admin list views. |
