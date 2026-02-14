@@ -43,7 +43,7 @@ VITE_API_BASE_URL=http://localhost:4000/api
     *   `PolygonMapEditor.jsx`: Specialized component for drawing delivery zones.
 *   `src/context/`: Context providers (primarily `AuthContext`).
 *   `src/lib/`:
-    *   `api/`: Axios instance (`http.js`) and API endpoints (`requests.js`).
+    *   `api/`: Axios instance (`http.js`) and API endpoints (`requests.js`, `orders.js`).
     *   `auth.js`: Token management utilities.
 *   `src/pages/`: Main application views/routes.
 *   `src/routes/`: Route definitions (`protectedRoutes`).
@@ -54,7 +54,8 @@ VITE_API_BASE_URL=http://localhost:4000/api
 | **Authentication** | ✅ Complete | Login page, Token storage, Protected Routes. |
 | **Catalog** | ✅ Complete | Product & Category CRUD, Variant Management. |
 | **Serviceability** | ✅ Complete | Map-based Zone Editor (Leaflet). |
-| **Orders** | ❌ Missing | No dashboard or order list views. |
+| **Orders** | ✅ Complete | Dashboard, List, Details, Status Update. |
+| **Subscriptions** | ✅ Complete | Dashboard, Detail, Status Updates. |
 | **Customers** | ❌ Missing | No customer list or details view. |
 
 ## 🤝 Development Conventions

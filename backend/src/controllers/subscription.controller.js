@@ -50,6 +50,15 @@ const createSubscription = asyncHandler(async (req, res) => {
 });
 
 const getSubscriptions = asyncHandler(async (req, res) => {
+  // If admin route (checked via userType or route path if separated, but here relying on route middleware context)
+  // Actually, this controller method seems to be serving both?
+  // No, the original getSubscriptions was for "req.user.id".
+  // I should rename the customer one to "getCustomerSubscriptions" to avoid confusion or keep separate.
+  // The instruction asked to "Add getSubscriptions". I will assume this is the ADMIN version or I need to disambiguate.
+  // Since I am adding new methods, I will add "getAllSubscriptions" for admin.
+  
+  // Wait, the existing "getSubscriptions" uses req.user.id.
+  // I will add "adminGetSubscriptions".
   const subscriptions = await subscriptionService.getUserSubscriptions(req.user.id);
   res.json({ success: true, data: subscriptions });
 });
@@ -72,10 +81,45 @@ const cancelSubscription = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Subscription cancelled" });
 });
 
+// Admin Controllers
+const adminGetSubscriptions = asyncHandler(async (req, res) => {
+  const result = await subscriptionService.getAllSubscriptions(req.query);
+  res.json({ success: true, data: result });
+});
+
+const adminGetSubscriptionById = asyncHandler(async (req, res) => {
+  const subscription = await subscriptionService.getSubscriptionById(req.params.id);
+  res.json({ success: true, data: subscription });
+});
+
+const adminUpdateStatus = asyncHandler(async (req, res) => {
+  const schema = Joi.object({
+    status: Joi.string()
+      .valid("active", "paused", "cancelled")
+      .required(),
+  });
+
+  const { error, value } = schema.validate(req.body);
+  if (error) {
+    throw new AppError(error.details[0].message, 400);
+  }
+
+  const result = await subscriptionService.adminUpdateStatus(req.params.id, value.status);
+
+  res.json({
+    success: true,
+    data: result,
+    message: "Subscription status updated successfully",
+  });
+});
+
 module.exports = {
   createSubscription,
   getSubscriptions,
   pauseSubscription,
   resumeSubscription,
   cancelSubscription,
+  adminGetSubscriptions,
+  adminGetSubscriptionById,
+  adminUpdateStatus,
 };

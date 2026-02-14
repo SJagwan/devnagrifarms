@@ -1,4 +1,13 @@
-const { Subscription, SubscriptionItem, ProductVariant, Product, ProductVariantImage } = require("../models");
+const {
+  Subscription,
+  SubscriptionItem,
+  ProductVariant,
+  Product,
+  ProductVariantImage,
+  User,
+  AddressUser,
+} = require("../models");
+const { Op } = require("sequelize");
 
 const createSubscription = async (subscriptionData, itemsData, transaction) => {
   // Create Parent Subscription
@@ -38,10 +47,24 @@ const getSubscriptionsByUserId = async (userId) => {
   });
 };
 
-const getSubscriptionById = async (id, userId) => {
+const getSubscriptionById = async (id, userId = null) => {
+  const where = { id };
+  if (userId) {
+    where.user_id = userId;
+  }
+
   return await Subscription.findOne({
-    where: { id, user_id: userId },
+    where,
     include: [
+      {
+        model: User,
+        as: "user",
+        attributes: ["id", "first_name", "last_name", "email", "phone"],
+      },
+      {
+        model: AddressUser,
+        as: "shippingAddress",
+      },
       {
         model: SubscriptionItem,
         as: "items",
@@ -60,10 +83,62 @@ const getSubscriptionById = async (id, userId) => {
   });
 };
 
-const updateSubscriptionStatus = async (id, userId, status) => {
-  const subscription = await Subscription.findOne({
-    where: { id, user_id: userId },
+const getSubscriptionsPaged = async ({
+  page = 1,
+  limit = 10,
+  status,
+  search,
+  sortBy,
+  sortDir = "DESC",
+  userId,
+}) => {
+  const where = {};
+
+  if (userId) {
+    where.user_id = userId;
+  }
+
+  if (status) {
+    where.status = status;
+  }
+
+  if (search) {
+    where[Op.or] = [
+      { subscription_name: { [Op.like]: `%${search}%` } },
+      { id: { [Op.like]: `%${search}%` } },
+    ];
+  }
+
+  const offset = (page - 1) * limit;
+  const order = [[sortBy || "created_at", sortDir]];
+
+  const { rows, count } = await Subscription.findAndCountAll({
+    where,
+    limit,
+    offset,
+    order,
+    include: [
+      {
+        model: User,
+        as: "user",
+        attributes: ["first_name", "last_name", "phone"],
+      },
+      {
+        model: AddressUser,
+        as: "shippingAddress",
+        attributes: ["city"],
+      },
+    ],
   });
+
+  return { rows, count };
+};
+
+const updateSubscriptionStatus = async (id, userId, status) => {
+  const where = { id };
+  if (userId) where.user_id = userId; // Optional ownership check
+
+  const subscription = await Subscription.findOne({ where });
 
   if (!subscription) return null;
 
@@ -72,9 +147,18 @@ const updateSubscriptionStatus = async (id, userId, status) => {
   return subscription;
 };
 
+const updateSubscription = async (id, updateData) => {
+  const [updatedRows] = await Subscription.update(updateData, {
+    where: { id },
+  });
+  return updatedRows > 0;
+};
+
 module.exports = {
   createSubscription,
   getSubscriptionsByUserId,
   getSubscriptionById,
+  getSubscriptionsPaged,
   updateSubscriptionStatus,
+  updateSubscription,
 };

@@ -1,4 +1,4 @@
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 
 export default function AppToaster() {
   return (
@@ -26,3 +26,5 @@ export default function AppToaster() {
     />
   );
 }
+
+export { toast };

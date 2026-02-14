@@ -50,10 +50,10 @@ The project is organized into three main components:
 *   **Auth:** Login flow integrated.
 *   **Catalog Management:** Full CRUD for Products & Categories.
 *   **Serviceability:** Interactive Map Editor for delivery zones.
+*   **Order Management:** ✅ Complete (Dashboard, Detail, Status Updates).
+*   **Subscription Management:** ✅ Complete (Dashboard, Detail, Status Updates).
 *   **🚧 Missing:**
-    *   **Order Management:** Dashboard & Detail views.
     *   **Customer Management:** List & User details.
-    *   **Subscription Management.**
 
 ### ✅ Customer App (Mobile)
 *   **Auth:** Login/OTP flow.

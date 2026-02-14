@@ -106,6 +106,90 @@ const placeOrder = async (userId, { items, shippingAddressId, deliverySlot, deli
   }
 };
 
+const getAllOrders = async (query) => {
+  const { page = 1, limit = 10, status, search, sortBy, sortDir } = query;
+  
+  const { rows, count } = await orderRepository.getOrdersPaged({
+    page: Number(page),
+    limit: Number(limit),
+    status,
+    search,
+    sortBy,
+    sortDir,
+  });
+
+  const totalPages = Math.ceil(count / limit) || 1;
+
+  return {
+    items: rows,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      totalItems: count,
+      totalPages,
+    },
+  };
+};
+
+const getUserOrders = async (userId, query) => {
+  const { page = 1, limit = 10, status, sortBy, sortDir } = query || {};
+  
+  const { rows, count } = await orderRepository.getOrdersPaged({
+    page: Number(page),
+    limit: Number(limit),
+    status,
+    sortBy,
+    sortDir,
+    userId,
+  });
+
+  const totalPages = Math.ceil(count / limit) || 1;
+
+  return {
+    items: rows,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      totalItems: count,
+      totalPages,
+    },
+  };
+};
+
+const getOrderById = async (id) => {
+  const order = await orderRepository.getOrderById(id);
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+  return order;
+};
+
+const getUserOrderById = async (id, userId) => {
+  const order = await orderRepository.getOrderById(id, userId);
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+  return order;
+};
+
+const updateOrderStatus = async (id, status) => {
+  const order = await orderRepository.getOrderById(id);
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+
+  // TODO: Add valid status transitions state machine check here if needed
+  // e.g. pending -> confirmed -> delivered
+  
+  await orderRepository.updateOrder(id, { status });
+  return { id, status };
+};
+
 module.exports = {
   placeOrder,
+  getAllOrders,
+  getUserOrders,
+  getOrderById,
+  getUserOrderById,
+  updateOrderStatus,
 };

@@ -79,6 +79,14 @@ const getUserSubscriptions = async (userId) => {
   return await subscriptionRepository.getSubscriptionsByUserId(userId);
 };
 
+const getUserSubscriptionById = async (id, userId) => {
+  const subscription = await subscriptionRepository.getSubscriptionById(id, userId);
+  if (!subscription) {
+    throw new AppError("Subscription not found", 404);
+  }
+  return subscription;
+};
+
 const pauseSubscription = async (userId, subscriptionId) => {
   return await subscriptionRepository.updateSubscriptionStatus(
     subscriptionId,
@@ -103,10 +111,58 @@ const cancelSubscription = async (userId, subscriptionId) => {
   );
 };
 
+// Admin Methods
+const getAllSubscriptions = async (query) => {
+  const { page = 1, limit = 10, status, search, sortBy, sortDir } = query;
+
+  const { rows, count } = await subscriptionRepository.getSubscriptionsPaged({
+    page: Number(page),
+    limit: Number(limit),
+    status,
+    search,
+    sortBy,
+    sortDir,
+  });
+
+  const totalPages = Math.ceil(count / limit) || 1;
+
+  return {
+    items: rows,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      totalItems: count,
+      totalPages,
+    },
+  };
+};
+
+const getSubscriptionById = async (id) => {
+  const subscription = await subscriptionRepository.getSubscriptionById(id);
+  if (!subscription) {
+    throw new AppError("Subscription not found", 404);
+  }
+  return subscription;
+};
+
+const adminUpdateStatus = async (id, status) => {
+  const subscription = await subscriptionRepository.getSubscriptionById(id);
+  if (!subscription) {
+    throw new AppError("Subscription not found", 404);
+  }
+  // No user check for admin
+  await subscriptionRepository.updateSubscriptionStatus(id, null, status);
+  return { id, status };
+};
+
 module.exports = {
   createSubscription,
   getUserSubscriptions,
+  getUserSubscriptionById,
   pauseSubscription,
   resumeSubscription,
   cancelSubscription,
+  getAllSubscriptions,
+  getSubscriptionById,
+  adminUpdateStatus,
 };

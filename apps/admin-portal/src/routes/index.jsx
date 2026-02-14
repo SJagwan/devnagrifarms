@@ -4,11 +4,31 @@ import Products from "../pages/Products";
 import ProductEdit from "../pages/ProductEdit";
 import ProductVariants from "../pages/ProductVariants";
 import ServiceableAreas from "../pages/ServiceableAreas";
+import Orders from "../pages/Orders";
+import OrderDetail from "../pages/OrderDetail";
+import Subscriptions from "../pages/Subscriptions";
+import SubscriptionDetail from "../pages/SubscriptionDetail";
 
 export const protectedRoutes = [
   {
     path: "/",
     element: Dashboard,
+  },
+  {
+    path: "/orders",
+    element: Orders,
+  },
+  {
+    path: "/orders/:id",
+    element: OrderDetail,
+  },
+  {
+    path: "/subscriptions",
+    element: Subscriptions,
+  },
+  {
+    path: "/subscriptions/:id",
+    element: SubscriptionDetail,
   },
   {
     path: "/categories",
