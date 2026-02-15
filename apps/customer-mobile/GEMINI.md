@@ -69,13 +69,14 @@ Follows Expo Router conventions.
 
 ## 📊 Feature Implementation Status
 
-| Feature            | Status      | Details                                                |
-| :----------------- | :---------- | :----------------------------------------------------- |
-| **Authentication** | ✅ Complete | Login, OTP Verification, Auto-login.                   |
-| **Browsing**       | ✅ Complete | Home Feed, Categories, Product Details.                |
-| **Cart**           | ✅ Complete | Context, Add/Remove items, Persistence (AsyncStorage). |
-| **Checkout**       | ✅ Complete | Address selection, Order placement API integration.    |
-| **Order History**  | ❌ Missing  | No Past Orders screen.                                 |
+| Feature            | Status      | Details                                                              |
+| :----------------- | :---------- | :------------------------------------------------------------------- |
+| **Authentication** | ✅ Complete | Login, OTP Verification, Auto-login.                                 |
+| **Browsing**       | ✅ Complete | Home Feed, Categories, Product Details.                              |
+| **Cart**           | ✅ Complete | Context, Add/Remove items, Persistence (AsyncStorage).               |
+| **Checkout**       | ✅ Complete | Address selection, Order placement API integration.                  |
+| **Subscriptions**  | ✅ Complete | View Details, Calendar (Skip/Restore), Vacation Mode, Strict Cancel. |
+| **Order History**  | ❌ Missing  | No Past Orders screen.                                               |
 
 ## 🤝 Development Conventions
 

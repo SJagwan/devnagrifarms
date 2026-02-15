@@ -44,6 +44,16 @@ const getOrderById = asyncHandler(async (req, res) => {
   res.json({ success: true, data: order });
 });
 
+const getMyOrders = asyncHandler(async (req, res) => {
+  const result = await orderService.getUserOrders(req.user.id, req.query);
+  res.json({ success: true, data: result });
+});
+
+const getMyOrderById = asyncHandler(async (req, res) => {
+  const order = await orderService.getUserOrderById(req.params.id, req.user.id);
+  res.json({ success: true, data: order });
+});
+
 const updateStatus = asyncHandler(async (req, res) => {
   const schema = Joi.object({
     status: Joi.string()
@@ -69,5 +79,7 @@ module.exports = {
   createOrder,
   getOrders,
   getOrderById,
+  getMyOrders,
+  getMyOrderById,
   updateStatus,
 };

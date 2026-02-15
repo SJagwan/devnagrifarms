@@ -33,10 +33,22 @@ router.post("/addresses", addressController.addAddress);
 
 // Subscriptions
 router.get("/subscriptions", subscriptionController.getSubscriptions);
+router.get("/subscriptions/:id", subscriptionController.getSubscriptionById);
 router.post("/subscriptions", subscriptionController.createSubscription);
-router.post("/subscriptions/:id/pause", subscriptionController.pauseSubscription);
-router.post("/subscriptions/:id/resume", subscriptionController.resumeSubscription);
-router.post("/subscriptions/:id/cancel", subscriptionController.cancelSubscription);
+router.post(
+  "/subscriptions/:id/pause",
+  subscriptionController.pauseSubscription,
+);
+router.post(
+  "/subscriptions/:id/resume",
+  subscriptionController.resumeSubscription,
+);
+router.post(
+  "/subscriptions/:id/cancel",
+  subscriptionController.cancelSubscription,
+);
+router.post("/subscriptions/:id/skip", subscriptionController.skipDelivery);
+router.post("/subscriptions/:id/unskip", subscriptionController.unskipDelivery);
 
 // Products
 router.get("/products", productController.getAllProducts);
@@ -47,12 +59,14 @@ router.get("/products/:id/variants", productController.listVariants);
 router.get("/categories", categoryController.getAllCategories);
 
 // Orders
+router.get("/orders", orderController.getMyOrders);
+router.get("/orders/:id", orderController.getMyOrderById);
 router.post("/orders", orderController.createOrder);
 
 // Serviceability
 router.post(
   "/serviceability/check",
-  serviceableAreaController.checkServiceability
+  serviceableAreaController.checkServiceability,
 );
 
 module.exports = router;

@@ -27,7 +27,7 @@ const MENU_SECTIONS = [
       {
         icon: "receipt-outline",
         label: "Order History",
-        route: "/account/orders",
+        route: "/orders",
       },
       {
         icon: "refresh-outline",
@@ -77,7 +77,11 @@ export default function AccountScreen() {
   };
 
   const handleMenuPress = (route) => {
-    if (route === "/account/addresses") {
+    if (
+      route === "/account/addresses" ||
+      route === "/orders" ||
+      route === "/account/subscriptions"
+    ) {
       router.push(route);
       return;
     }
@@ -103,9 +107,7 @@ export default function AccountScreen() {
                 {user?.phone || user?.email || "No contact info"}
               </Text>
             </View>
-            <Pressable
-              onPress={() => handleMenuPress("/account/profile")}
-            >
+            <Pressable onPress={() => handleMenuPress("/account/profile")}>
               <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
             </Pressable>
           </View>

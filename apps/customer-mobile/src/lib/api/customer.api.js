@@ -16,6 +16,8 @@ export const customerAPI = {
 
   // Orders
   createOrder: (data) => api.post("/customer/orders", data),
+  getOrders: (params) => api.get("/customer/orders", { params }),
+  getOrderById: (id) => api.get(`/customer/orders/${id}`),
 
   // Addresses
   getAddresses: () => api.get("/customer/addresses"),
@@ -24,9 +26,15 @@ export const customerAPI = {
   // Subscriptions
   createSubscription: (data) => api.post("/customer/subscriptions", data),
   getSubscriptions: () => api.get("/customer/subscriptions"),
-  pauseSubscription: (id) => api.post(`/customer/subscriptions/${id}/pause`),
+  getSubscriptionById: (id) => api.get(`/customer/subscriptions/${id}`),
+  pauseSubscription: (id, pausedUntil = null) =>
+    api.post(`/customer/subscriptions/${id}/pause`, { pausedUntil }),
   resumeSubscription: (id) => api.post(`/customer/subscriptions/${id}/resume`),
   cancelSubscription: (id) => api.post(`/customer/subscriptions/${id}/cancel`),
+  skipSubscriptionDelivery: (id, date) =>
+    api.post(`/customer/subscriptions/${id}/skip`, { date }),
+  unskipSubscriptionDelivery: (id, date) =>
+    api.post(`/customer/subscriptions/${id}/unskip`, { date }),
 
   // Serviceability
   checkServiceability: (data) =>

@@ -17,7 +17,10 @@ const createSubscription = async (userId, data) => {
     } = data;
 
     // 1. Validate Address
-    const address = await addressRepository.getAddressById(shippingAddressId, userId);
+    const address = await addressRepository.getAddressById(
+      shippingAddressId,
+      userId,
+    );
     if (!address) {
       throw new AppError("Shipping address not found", 400);
     }
@@ -29,9 +32,10 @@ const createSubscription = async (userId, data) => {
     for (const item of items) {
       const { variantId, quantity } = item;
       const variant = await productVariantRepository.getVariantById(variantId);
-      
+
       if (!variant) throw new AppError(`Variant not found: ${variantId}`, 400);
-      if (!variant.is_active) throw new AppError(`Product unavailable: ${variant.sku}`, 400);
+      if (!variant.is_active)
+        throw new AppError(`Product unavailable: ${variant.sku}`, 400);
 
       // Construct name (e.g. "Milk Standard - 500ml")
       if (!subscriptionName) {
@@ -63,12 +67,11 @@ const createSubscription = async (userId, data) => {
     const subscription = await subscriptionRepository.createSubscription(
       subscriptionData,
       subscriptionItemsData,
-      transaction
+      transaction,
     );
 
     await transaction.commit();
     return subscription;
-
   } catch (error) {
     await transaction.rollback();
     throw error;
@@ -80,26 +83,53 @@ const getUserSubscriptions = async (userId) => {
 };
 
 const getUserSubscriptionById = async (id, userId) => {
-  const subscription = await subscriptionRepository.getSubscriptionById(id, userId);
+  const subscription = await subscriptionRepository.getSubscriptionById(
+    id,
+    userId,
+  );
   if (!subscription) {
     throw new AppError("Subscription not found", 404);
   }
   return subscription;
 };
 
-const pauseSubscription = async (userId, subscriptionId) => {
+const pauseSubscription = async (
+  userId,
+  subscriptionId,
+  pausedUntil = null,
+) => {
+  if (pausedUntil) {
+    const pauseDate = new Date(pausedUntil);
+    const now = new Date();
+    // Validate cutoff (e.g. > 12 hours) - implementing simple check for future date
+    if (pauseDate <= now) {
+      throw new AppError("Pause date must be in the future", 400);
+    }
+  }
+
   return await subscriptionRepository.updateSubscriptionStatus(
     subscriptionId,
     userId,
-    "paused"
+    "paused",
+    pausedUntil,
   );
 };
 
 const resumeSubscription = async (userId, subscriptionId) => {
+  const subscription = await subscriptionRepository.getSubscriptionById(
+    subscriptionId,
+    userId,
+  );
+  if (!subscription) throw new AppError("Subscription not found", 404);
+
+  if (subscription.status === "cancelled") {
+    throw new AppError("Cannot resume a cancelled subscription", 400);
+  }
+
   return await subscriptionRepository.updateSubscriptionStatus(
     subscriptionId,
     userId,
-    "active"
+    "active",
   );
 };
 
@@ -107,8 +137,88 @@ const cancelSubscription = async (userId, subscriptionId) => {
   return await subscriptionRepository.updateSubscriptionStatus(
     subscriptionId,
     userId,
-    "cancelled"
+    "cancelled",
   );
+};
+
+const skipDelivery = async (userId, subscriptionId, date) => {
+  const subscription = await subscriptionRepository.getSubscriptionById(
+    subscriptionId,
+    userId,
+  );
+  if (!subscription) throw new AppError("Subscription not found", 404);
+
+  // Validate Date Cutoff (12 hours)
+  // Assumes date string is YYYY-MM-DD.
+  const targetDate = new Date(date); // UTC Midnight
+
+  // Adjust target time based on slot to allow more accurate cutoff
+  // Morning (approx 7 AM IST -> 01:30 UTC): Add 2 hours to be safe/approx
+  // Evening (approx 6 PM IST -> 12:30 UTC): Add 11 hours
+  if (subscription.delivery_slot === "evening") {
+    targetDate.setHours(11);
+  } else {
+    targetDate.setHours(2);
+  }
+
+  const now = new Date();
+  const diffHours = (targetDate - now) / 1000 / 60 / 60;
+
+  if (diffHours < 12) {
+    throw new AppError("Cannot skip delivery less than 12 hours before", 400);
+  }
+
+  let skipDates = subscription.skip_dates || [];
+  if (!skipDates.includes(date)) {
+    skipDates.push(date);
+    await subscriptionRepository.updateSkipDates(
+      subscriptionId,
+      userId,
+      skipDates,
+    );
+  }
+
+  return skipDates;
+};
+
+const unskipDelivery = async (userId, subscriptionId, date) => {
+  const subscription = await subscriptionRepository.getSubscriptionById(
+    subscriptionId,
+    userId,
+  );
+  if (!subscription) throw new AppError("Subscription not found", 404);
+
+  // Validate Date Cutoff (12 hours) - restoring also needs notice or maybe not?
+  // Let's enforce 12h for consistency so logistics can handle it.
+  const targetDate = new Date(date);
+
+  if (subscription.delivery_slot === "evening") {
+    targetDate.setHours(11);
+  } else {
+    targetDate.setHours(2);
+  }
+
+  const now = new Date();
+  const diffHours = (targetDate - now) / 1000 / 60 / 60;
+
+  if (diffHours < 12) {
+    throw new AppError(
+      "Cannot restore delivery less than 12 hours before",
+      400,
+    );
+  }
+
+  let skipDates = subscription.skip_dates || [];
+  if (skipDates.includes(date)) {
+    skipDates = skipDates.filter((d) => d !== date);
+    await subscriptionRepository.updateSkipDates(
+      subscriptionId,
+      userId,
+      skipDates,
+    );
+  }
+
+  return skipDates;
 };
 
 // Admin Methods
@@ -165,4 +275,6 @@ module.exports = {
   getAllSubscriptions,
   getSubscriptionById,
   adminUpdateStatus,
+  skipDelivery,
+  unskipDelivery,
 };

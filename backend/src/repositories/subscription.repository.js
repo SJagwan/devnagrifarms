@@ -11,7 +11,9 @@ const { Op } = require("sequelize");
 
 const createSubscription = async (subscriptionData, itemsData, transaction) => {
   // Create Parent Subscription
-  const subscription = await Subscription.create(subscriptionData, { transaction });
+  const subscription = await Subscription.create(subscriptionData, {
+    transaction,
+  });
 
   // Create Items
   const itemsWithId = itemsData.map((item) => ({
@@ -37,7 +39,7 @@ const getSubscriptionsByUserId = async (userId) => {
             as: "variant",
             include: [
               { model: Product, as: "product", attributes: ["name"] },
-              { model: ProductVariantImage, as: "images" }
+              { model: ProductVariantImage, as: "images" },
             ],
           },
         ],
@@ -74,7 +76,7 @@ const getSubscriptionById = async (id, userId = null) => {
             as: "variant",
             include: [
               { model: Product, as: "product", attributes: ["name"] },
-              { model: ProductVariantImage, as: "images" }
+              { model: ProductVariantImage, as: "images" },
             ],
           },
         ],
@@ -134,7 +136,12 @@ const getSubscriptionsPaged = async ({
   return { rows, count };
 };
 
-const updateSubscriptionStatus = async (id, userId, status) => {
+const updateSubscriptionStatus = async (
+  id,
+  userId,
+  status,
+  pausedUntil = null,
+) => {
   const where = { id };
   if (userId) where.user_id = userId; // Optional ownership check
 
@@ -143,6 +150,24 @@ const updateSubscriptionStatus = async (id, userId, status) => {
   if (!subscription) return null;
 
   subscription.status = status;
+  if (status === "paused") {
+    // If paused, set the date (or null for indefinite)
+    subscription.paused_until = pausedUntil;
+  } else if (status === "active") {
+    subscription.paused_until = null;
+  }
+  await subscription.save();
+  return subscription;
+};
+
+const updateSkipDates = async (id, userId, skipDates) => {
+  const where = { id };
+  if (userId) where.user_id = userId;
+
+  const subscription = await Subscription.findOne({ where });
+  if (!subscription) return null;
+
+  subscription.skip_dates = skipDates;
   await subscription.save();
   return subscription;
 };
@@ -160,5 +185,6 @@ module.exports = {
   getSubscriptionById,
   getSubscriptionsPaged,
   updateSubscriptionStatus,
+  updateSkipDates,
   updateSubscription,
 };
