@@ -29,6 +29,10 @@ module.exports = {
         onDelete: "RESTRICT",
         onUpdate: "CASCADE",
       },
+      hsn_code: {
+        type: Sequelize.STRING(20),
+        allowNull: true,
+      },
       quantity: {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
@@ -42,7 +46,37 @@ module.exports = {
         allowNull: false,
         defaultValue: 0,
       },
+      cgst_rate: {
+        type: Sequelize.DECIMAL(5, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      sgst_rate: {
+        type: Sequelize.DECIMAL(5, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      igst_rate: {
+        type: Sequelize.DECIMAL(5, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
       tax_amount: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      cgst_amount: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      sgst_amount: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      igst_amount: {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
         defaultValue: 0,

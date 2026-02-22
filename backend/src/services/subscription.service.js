@@ -44,12 +44,34 @@ const createSubscription = async (userId, data) => {
         subscriptionName += " + others"; // If we support multi-item later
       }
 
+      const price = parseFloat(variant.price);
+      const taxPercent = parseFloat(variant.product?.default_tax || 0);
+      const hsnCode = variant.product?.hsn_code;
+      const discountPercent = variant.discount_percent || 0;
+
+      const taxAmount = (price * taxPercent) / 100;
+      const cgstRate = taxPercent / 2;
+      const sgstRate = taxPercent / 2;
+      const igstRate = 0;
+
+      const cgstAmount = taxAmount / 2;
+      const sgstAmount = taxAmount / 2;
+      const igstAmount = 0;
+
       subscriptionItemsData.push({
         product_variant_id: variantId,
+        hsn_code: hsnCode,
         quantity,
-        price: variant.price, // Lock price at start? Or fetch current? Typically lock or link. Using current price.
-        tax_percent: 0, // Placeholder
-        discount_percent: variant.discount_percent || 0,
+        price,
+        tax_percent: taxPercent,
+        cgst_rate: cgstRate,
+        sgst_rate: sgstRate,
+        igst_rate: igstRate,
+        tax_amount: taxAmount,
+        cgst_amount: cgstAmount,
+        sgst_amount: sgstAmount,
+        igst_amount: igstAmount,
+        discount_percent: discountPercent,
       });
     }
 

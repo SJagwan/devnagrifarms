@@ -27,6 +27,10 @@ module.exports = {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
       },
+      hsn_code: {
+        type: Sequelize.STRING(20),
+        allowNull: true,
+      },
       default_tax: {
         type: Sequelize.DECIMAL(5, 2),
         allowNull: false,

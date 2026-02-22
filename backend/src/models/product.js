@@ -37,6 +37,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: false,
       },
+      hsn_code: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
       default_tax: {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: false,

@@ -1,4 +1,4 @@
-const { ProductVariant, ProductVariantImage } = require("../models");
+const { ProductVariant, ProductVariantImage, Product } = require("../models");
 const { Op } = require("sequelize");
 
 const getVariantsByProductId = async (productId) => {
@@ -44,7 +44,10 @@ const getVariantsByProductIdPaged = async (
 
 const getVariantById = async (id) => {
   return await ProductVariant.findByPk(id, {
-    include: [{ model: ProductVariantImage, as: "images" }],
+    include: [
+      { model: ProductVariantImage, as: "images" },
+      { model: Product, as: "product" },
+    ],
   });
 };
 

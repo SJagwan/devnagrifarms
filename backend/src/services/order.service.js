@@ -8,12 +8,18 @@ const AppError = require("../utils/AppError");
 /**
  * Place a new order
  */
-const placeOrder = async (userId, { items, shippingAddressId, deliverySlot, deliveryDate, notes }) => {
+const placeOrder = async (
+  userId,
+  { items, shippingAddressId, deliverySlot, deliveryDate, notes },
+) => {
   const transaction = await sequelize.transaction();
 
   try {
     // 1. Validate Address
-    const address = await addressRepository.getAddressById(shippingAddressId, userId);
+    const address = await addressRepository.getAddressById(
+      shippingAddressId,
+      userId,
+    );
     if (!address) {
       throw new AppError("Shipping address not found or invalid", 400);
     }
@@ -32,25 +38,35 @@ const placeOrder = async (userId, { items, shippingAddressId, deliverySlot, deli
     // 2. Process Items & Calculate Totals
     let subtotal = 0;
     let totalTax = 0;
+    let totalCgst = 0;
+    let totalSgst = 0;
+    let totalIgst = 0;
     const orderItemsData = [];
 
     for (const item of items) {
       const { variantId, quantity } = item;
 
-      // Fetch Variant Details
+      // Fetch Variant Details (now includes Product via updated repository)
       const variant = await productVariantRepository.getVariantById(variantId);
       if (!variant) {
         throw new AppError(`Product variant not found: ${variantId}`, 400);
       }
 
       if (!variant.is_active) {
-        throw new AppError(`Product is currently unavailable: ${variant.sku}`, 400);
+        throw new AppError(
+          `Product is currently unavailable: ${variant.sku}`,
+          400,
+        );
       }
 
       // Check Stock
-      const availableStock = await inventoryRepository.getAvailableStock(variantId);
+      const availableStock =
+        await inventoryRepository.getAvailableStock(variantId);
       if (availableStock < quantity) {
-        throw new AppError(`Insufficient stock for ${variant.sku}. Available: ${availableStock}`, 400);
+        throw new AppError(
+          `Insufficient stock for ${variant.sku}. Available: ${availableStock}`,
+          400,
+        );
       }
 
       // Reduce Stock (Locking happens inside repository)
@@ -58,25 +74,43 @@ const placeOrder = async (userId, { items, shippingAddressId, deliverySlot, deli
 
       // Price Calculation
       const price = parseFloat(variant.price); // Unit Price
-      // TODO: Fetch tax percent from Product or Category. For now defaulting to 0 or hardcoded if needed.
-      // Assuming variant doesn't hold tax, but we need it. Let's assume 0 for MVP or 5% default.
-      const taxPercent = 0; // Placeholder
+      const taxPercent = parseFloat(variant.product?.default_tax || 0);
+      const hsnCode = variant.product?.hsn_code;
       const discountPercent = variant.discount_percent || 0;
-      
+
       const lineTotal = price * quantity;
       const taxAmount = (lineTotal * taxPercent) / 100;
 
+      // GST Split (Assuming Intra-state: 50/50 split between CGST and SGST)
+      const cgstRate = taxPercent / 2;
+      const sgstRate = taxPercent / 2;
+      const igstRate = 0; // Assuming Intra-state for MVP
+
+      const cgstAmount = taxAmount / 2;
+      const sgstAmount = taxAmount / 2;
+      const igstAmount = 0;
+
       subtotal += lineTotal;
       totalTax += taxAmount;
+      totalCgst += cgstAmount;
+      totalSgst += sgstAmount;
+      totalIgst += igstAmount;
 
       orderItemsData.push({
         product_variant_id: variantId,
+        hsn_code: hsnCode,
         quantity,
         price,
         tax_percent: taxPercent,
+        cgst_rate: cgstRate,
+        sgst_rate: sgstRate,
+        igst_rate: igstRate,
         tax_amount: taxAmount,
+        cgst_amount: cgstAmount,
+        sgst_amount: sgstAmount,
+        igst_amount: igstAmount,
         discount_percent: discountPercent,
-        total_price: lineTotal + taxAmount, // Storing inclusive or exclusive? Model says total_price. Usually line total.
+        total_price: lineTotal + taxAmount,
       });
     }
 
@@ -88,6 +122,10 @@ const placeOrder = async (userId, { items, shippingAddressId, deliverySlot, deli
       shipping_address_id: shippingAddressId,
       shipping_address_snapshot: shippingAddressSnapshot,
       total_price: totalPrice,
+      total_tax: totalTax,
+      cgst_total: totalCgst,
+      sgst_total: totalSgst,
+      igst_total: totalIgst,
       status: "pending", // Default
       payment_status: "unpaid", // Default
       delivery_slot: deliverySlot || "morning",
@@ -95,11 +133,14 @@ const placeOrder = async (userId, { items, shippingAddressId, deliverySlot, deli
       notes,
     };
 
-    const order = await orderRepository.createOrder(orderData, orderItemsData, transaction);
+    const order = await orderRepository.createOrder(
+      orderData,
+      orderItemsData,
+      transaction,
+    );
 
     await transaction.commit();
     return order;
-
   } catch (error) {
     await transaction.rollback();
     throw error;
@@ -108,7 +149,7 @@ const placeOrder = async (userId, { items, shippingAddressId, deliverySlot, deli
 
 const getAllOrders = async (query) => {
   const { page = 1, limit = 10, status, search, sortBy, sortDir } = query;
-  
+
   const { rows, count } = await orderRepository.getOrdersPaged({
     page: Number(page),
     limit: Number(limit),
@@ -133,7 +174,7 @@ const getAllOrders = async (query) => {
 
 const getUserOrders = async (userId, query) => {
   const { page = 1, limit = 10, status, sortBy, sortDir } = query || {};
-  
+
   const { rows, count } = await orderRepository.getOrdersPaged({
     page: Number(page),
     limit: Number(limit),
@@ -180,7 +221,7 @@ const updateOrderStatus = async (id, status) => {
 
   // TODO: Add valid status transitions state machine check here if needed
   // e.g. pending -> confirmed -> delivered
-  
+
   await orderRepository.updateOrder(id, { status });
   return { id, status };
 };
