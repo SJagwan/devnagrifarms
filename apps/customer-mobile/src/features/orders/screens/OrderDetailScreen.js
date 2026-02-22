@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,25 +6,18 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
+  RefreshControl,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { customerAPI } from "@lib/api/customer.api";
 import { Ionicons } from "@expo/vector-icons";
 
-const STATUS_ICONS = {
-  pending: "time-outline",
-  confirmed: "checkmark-circle-outline",
-  shipped: "bicycle-outline",
-  delivered: "home-outline",
-  cancelled: "close-circle-outline",
-};
-
-const STATUS_COLORS = {
-  pending: "text-yellow-600",
-  confirmed: "text-blue-600",
-  shipped: "text-purple-600",
-  delivered: "text-green-600",
-  cancelled: "text-red-600",
+const STATUS_CONFIG = {
+  pending: { icon: "time-outline", color: "#ca8a04", textColor: "text-yellow-600" },
+  confirmed: { icon: "checkmark-circle-outline", color: "#2563eb", textColor: "text-blue-600" },
+  shipped: { icon: "bicycle-outline", color: "#9333ea", textColor: "text-purple-600" },
+  delivered: { icon: "home-outline", color: "#16a34a", textColor: "text-green-600" },
+  cancelled: { icon: "close-circle-outline", color: "#dc2626", textColor: "text-red-600" },
 };
 
 export default function OrderDetailScreen() {
@@ -32,12 +25,16 @@ export default function OrderDetailScreen() {
   const router = useRouter();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchOrder();
   }, [id]);
 
-  const fetchOrder = async () => {
+  const fetchOrder = async (isRefreshing = false) => {
+    if (isRefreshing) setRefreshing(true);
+    else setLoading(true);
+
     try {
       const res = await customerAPI.getOrderById(id);
       setOrder(res.data.data);
@@ -46,10 +43,15 @@ export default function OrderDetailScreen() {
       Alert.alert("Error", "Could not load order details");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  if (loading) {
+  const onRefresh = useCallback(() => {
+    fetchOrder(true);
+  }, [id]);
+
+  if (loading && !refreshing) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
         <ActivityIndicator size="large" color="#16a34a" />
@@ -60,44 +62,39 @@ export default function OrderDetailScreen() {
   if (!order) return null;
 
   const { shipping_address_snapshot: address } = order;
+  const statusInfo = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView
+      className="flex-1 bg-gray-50"
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={["#16a34a"]}
+          tintColor="#16a34a"
+        />
+      }
+    >
       {/* Header Status */}
       <View className="bg-white p-6 mb-4 shadow-sm items-center">
-        <Ionicons
-          name={STATUS_ICONS[order.status]}
-          size={48}
-          color={
-            STATUS_COLORS[order.status]
-              .replace("text-", "")
-              .replace("-600", "") === "yellow"
-              ? "#ca8a04"
-              : STATUS_COLORS[order.status]
-                    .replace("text-", "")
-                    .replace("-600", "") === "blue"
-                ? "#2563eb"
-                : STATUS_COLORS[order.status]
-                      .replace("text-", "")
-                      .replace("-600", "") === "green"
-                  ? "#16a34a"
-                  : STATUS_COLORS[order.status]
-                        .replace("text-", "")
-                        .replace("-600", "") === "red"
-                    ? "#dc2626"
-                    : "#9333ea"
-          }
-        />
+        <View className="w-20 h-20 rounded-full items-center justify-center mb-2 bg-gray-50">
+          <Ionicons
+            name={statusInfo.icon}
+            size={48}
+            color={statusInfo.color}
+          />
+        </View>
         <Text
-          className={`text-xl font-bold mt-2 capitalize ${STATUS_COLORS[order.status]}`}
+          className={`text-xl font-bold mt-2 capitalize ${statusInfo.textColor}`}
         >
           {order.status}
         </Text>
         <Text className="text-gray-500 mt-1">
           Order #{order.id.split("-")[0].toUpperCase()}
         </Text>
-        <Text className="text-gray-400 text-sm mt-1">
-          Placed on {new Date(order.created_at).toLocaleString()}
+        <Text className="text-gray-400 text-xs mt-1">
+          Placed on {new Date(order.created_at).toLocaleString("en-IN")}
         </Text>
       </View>
 

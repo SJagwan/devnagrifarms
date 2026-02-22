@@ -60,12 +60,21 @@ export default function OrderSuccessScreen() {
         ) : null}
       </View>
 
-      <TouchableOpacity
-        onPress={() => router.replace("/(tabs)")}
-        className="w-full bg-green-600 py-4 rounded-xl items-center"
-      >
-        <Text className="text-white font-bold text-lg">Continue Shopping</Text>
-      </TouchableOpacity>
+      <View className="w-full gap-y-4">
+        <TouchableOpacity
+          onPress={() => router.replace(`/orders/${orderId}`)}
+          className="w-full bg-green-600 py-4 rounded-xl items-center"
+        >
+          <Text className="text-white font-bold text-lg">View Order Details</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => router.replace("/(tabs)")}
+          className="w-full border border-green-600 py-4 rounded-xl items-center"
+        >
+          <Text className="text-green-600 font-bold text-lg">Continue Shopping</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
