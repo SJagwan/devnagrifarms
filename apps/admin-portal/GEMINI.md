@@ -1,55 +1,27 @@
 # Devnagri Farms - Admin Portal
 
 ## 🌍 Project Overview
-The **Admin Portal** is the web-based command center for the Devnagri Farms platform. It enables administrators to manage the product catalog, define serviceable delivery areas using interactive maps, and oversee platform operations.
+Web-based management dashboard for Devnagri Farms operations, built with React and Vite.
 
 ## 🛠 Tech Stack
 *   **Core:** React 19, Vite 7
-*   **Routing:** React Router DOM v7
 *   **Styling:** Tailwind CSS v4, Headless UI
-*   **Maps:** Leaflet, React Leaflet, Leaflet Draw
-*   **State Management:** React Context API (Auth)
-*   **HTTP Client:** Axios (with JWT interceptors)
+*   **Routing:** React Router DOM v7
+*   **Maps:** Leaflet (Serviceable Area editor)
 *   **Notifications:** React Hot Toast
 
-## 🚀 Building and Running
+## 📊 Feature Implementation Status
 
-### Prerequisites
-*   Node.js (LTS recommended)
-*   Backend API running (default: `http://localhost:4000/api`)
-
-### Scripts
-| Command | Description |
-| :--- | :--- |
-| `npm run dev` | Start the development server (with HMR) |
-| `npm run build` | Build the application for production |
-| `npm run preview` | Preview the production build locally |
-| `npm run lint` | Run ESLint for code quality checks |
-
-## ⚙️ Configuration
-The application is configured via environment variables. Create a `.env` file in the root directory:
-
-```env
-# URL of the backend API
-VITE_API_BASE_URL=http://localhost:4000/api
-```
-
-*   **Config File:** `src/lib/config.js` loads these variables.
-
-## 📂 Directory Structure
-*   `src/components/`
-    *   `layout/`: Core layout components (Sidebar, Header, MainLayout).
-    *   `ui/`: Reusable UI elements (Button, Modal, Table, etc.).
-    *   `PolygonMapEditor.jsx`: Specialized component for drawing delivery zones.
-*   `src/context/`: Context providers (primarily `AuthContext`).
-*   `src/lib/`:
-    *   `api/`: Axios instance (`http.js`) and API endpoints (`requests.js`).
-    *   `auth.js`: Token management utilities.
-*   `src/pages/`: Main application views/routes.
-*   `src/routes/`: Route definitions (`protectedRoutes`).
+| Feature | Status | Details |
+| :--- | :--- | :--- |
+| **Authentication** | ✅ Complete | Secure login with automatic token refresh. |
+| **Catalog** | ✅ Complete | CRUD for Products & Categories with HSN/Tax config. |
+| **Order Mgmt** | ✅ Complete | List, Details, Status Updates, and Customer Profile links. |
+| **Subscription Mgmt** | ✅ Complete | List, Details, and Status management. |
+| **Customer Mgmt** | ✅ Complete | Searchable list, detailed profiles (stats, orders, subs, addresses), and Block/Activate toggle. |
+| **Finance Dashboard**| 🚧 Missing | UI for Wallet ledger and manual adjustments. |
 
 ## 🤝 Development Conventions
-*   **Auth Flow:** The app uses a JWT-based auth flow with automatic refresh tokens handling in `src/lib/api/http.js`.
-*   **Error Handling:** Global error handling is implemented in the Axios interceptor, displaying toast notifications for errors.
-*   **Maps:** Serviceable areas are managed using Leaflet. Ensure map components are properly lazy-loaded or handled if SSR is ever introduced (though this is currently a SPA).
-*   **Styling:** Utility-first CSS with Tailwind v4. Use `@headlessui/react` for accessible interactive components (Dropdowns, Dialogs).
+- **Confirmation:** Always use `ConfirmDialog` for destructive or sensitive actions (like blocking a user).
+- **Navigation:** Maintain tight interlinking between orders, subscriptions, and customer profiles.
+- **Robustness:** Use fallbacks for dates (`createdAt` vs `created_at`) to handle backend database mappings gracefully.

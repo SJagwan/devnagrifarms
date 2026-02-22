@@ -1,9 +1,16 @@
 import { View, Text } from "react-native";
+import { useRouter } from "expo-router";
 import { useAuth } from "@context/AuthContext";
 import Button from "@shared/components/Button";
 
 export default function ProfileScreen() {
   const { logout, user } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/auth/login");
+  };
 
   return (
     <View className="flex-1 bg-white p-4">
@@ -14,7 +21,7 @@ export default function ProfileScreen() {
         <Text className="text-xl font-medium">{user?.phone}</Text>
       </View>
 
-      <Button title="Logout" variant="outline" onPress={logout} />
+      <Button title="Logout" variant="outline" onPress={handleLogout} />
     </View>
   );
 }

@@ -3,6 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 
 const menuItems = [
   { icon: "📊", label: "Dashboard", path: "/" },
+  { icon: "📦", label: "Orders", path: "/orders" },
+  { icon: "🔄", label: "Subscriptions", path: "/subscriptions" },
+  { icon: "👥", label: "Customers", path: "/customers" },
   { icon: "📂", label: "Categories", path: "/categories" },
   { icon: "🛒", label: "Products", path: "/products" },
   { icon: "📍", label: "Serviceable Areas", path: "/serviceable-areas" },

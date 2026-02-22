@@ -5,6 +5,10 @@ const categoryController = require("../controllers/category.controller");
 const productController = require("../controllers/product.controller");
 const serviceableAreaController = require("../controllers/serviceable-area.controller");
 const storageController = require("../controllers/storage.controller");
+const orderController = require("../controllers/order.controller");
+const subscriptionController = require("../controllers/subscription.controller");
+const userController = require("../controllers/user.controller");
+const walletController = require("../controllers/wallet.controller");
 
 const isAdmin = (req, res, next) => {
   if (req.user.userType !== "admin") {
@@ -21,6 +25,25 @@ router.use(authenticate, isAdmin);
 router.get("/dashboard/stats", (req, res) => {
   res.json({ success: true, message: "Admin dashboard stats" });
 });
+
+// User management
+router.get("/users", userController.getUsers);
+router.get("/users/:id", userController.getUserById);
+router.patch("/users/:id/status", userController.updateStatus);
+
+// Wallet management
+router.get("/users/:userId/wallet/passbook", walletController.adminGetUserPassbook);
+router.post("/users/:userId/wallet/adjustment", walletController.adminManualAdjustment);
+
+// Order management
+router.get("/orders", orderController.getOrders);
+router.get("/orders/:id", orderController.getOrderById);
+router.patch("/orders/:id/status", orderController.updateStatus);
+
+// Subscription management
+router.get("/subscriptions", subscriptionController.adminGetSubscriptions);
+router.get("/subscriptions/:id", subscriptionController.adminGetSubscriptionById);
+router.patch("/subscriptions/:id/status", subscriptionController.adminUpdateStatus);
 
 // Category management
 router.get("/categories", categoryController.getAllCategories);

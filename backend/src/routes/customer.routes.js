@@ -17,12 +17,47 @@ router.use(authenticate, isCustomer);
 const productController = require("../controllers/product.controller");
 const categoryController = require("../controllers/category.controller");
 const serviceableAreaController = require("../controllers/serviceable-area.controller");
+const orderController = require("../controllers/order.controller");
+const addressController = require("../controllers/address.controller");
+const subscriptionController = require("../controllers/subscription.controller");
+const walletController = require("../controllers/wallet.controller");
+const paymentController = require("../controllers/payment.controller");
 
 router.use(authenticate, isCustomer);
 
 router.get("/profile", (req, res) => {
   res.json({ success: true, message: "Get customer profile" });
 });
+
+// Wallet
+router.get("/wallet/passbook", walletController.getMyPassbook);
+
+// Payments
+router.post("/payments/create-order", paymentController.createAddFundsOrder);
+router.post("/payments/verify", paymentController.verifyPayment);
+
+// Addresses
+router.get("/addresses", addressController.getAddresses);
+router.post("/addresses", addressController.addAddress);
+
+// Subscriptions
+router.get("/subscriptions", subscriptionController.getSubscriptions);
+router.get("/subscriptions/:id", subscriptionController.getSubscriptionById);
+router.post("/subscriptions", subscriptionController.createSubscription);
+router.post(
+  "/subscriptions/:id/pause",
+  subscriptionController.pauseSubscription,
+);
+router.post(
+  "/subscriptions/:id/resume",
+  subscriptionController.resumeSubscription,
+);
+router.post(
+  "/subscriptions/:id/cancel",
+  subscriptionController.cancelSubscription,
+);
+router.post("/subscriptions/:id/skip", subscriptionController.skipDelivery);
+router.post("/subscriptions/:id/unskip", subscriptionController.unskipDelivery);
 
 // Products
 router.get("/products", productController.getAllProducts);
@@ -32,10 +67,15 @@ router.get("/products/:id/variants", productController.listVariants);
 // Categories
 router.get("/categories", categoryController.getAllCategories);
 
+// Orders
+router.get("/orders", orderController.getMyOrders);
+router.get("/orders/:id", orderController.getMyOrderById);
+router.post("/orders", orderController.createOrder);
+
 // Serviceability
 router.post(
   "/serviceability/check",
-  serviceableAreaController.checkServiceability
+  serviceableAreaController.checkServiceability,
 );
 
 module.exports = router;

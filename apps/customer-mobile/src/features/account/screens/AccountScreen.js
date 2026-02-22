@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ScrollView, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, Stack } from "expo-router";
 import { useAuth } from "@context/AuthContext";
@@ -27,7 +27,7 @@ const MENU_SECTIONS = [
       {
         icon: "receipt-outline",
         label: "Order History",
-        route: "/account/orders",
+        route: "/orders",
       },
       {
         icon: "refresh-outline",
@@ -65,11 +65,26 @@ export default function AccountScreen() {
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Logout", style: "destructive", onPress: () => logout() },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          await logout();
+          router.replace("/auth/login");
+        },
+      },
     ]);
   };
 
   const handleMenuPress = (route) => {
+    if (
+      route === "/account/addresses" ||
+      route === "/orders" ||
+      route === "/account/subscriptions"
+    ) {
+      router.push(route);
+      return;
+    }
     Alert.alert("Coming Soon", "This feature will be available soon!");
   };
 
@@ -92,11 +107,9 @@ export default function AccountScreen() {
                 {user?.phone || user?.email || "No contact info"}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => handleMenuPress("/account/profile")}
-            >
+            <Pressable onPress={() => handleMenuPress("/account/profile")}>
               <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
@@ -108,14 +121,15 @@ export default function AccountScreen() {
             </Text>
             <View className="bg-white mx-4 rounded-2xl border border-gray-100 overflow-hidden">
               {section.items.map((item, itemIndex) => (
-                <TouchableOpacity
+                <Pressable
                   key={itemIndex}
                   onPress={() => handleMenuPress(item.route)}
-                  className={`flex-row items-center px-4 py-4 ${
+                  className="flex-row items-center px-4 py-4"
+                  style={
                     itemIndex < section.items.length - 1
-                      ? "border-b border-gray-100"
-                      : ""
-                  }`}
+                      ? { borderBottomWidth: 1, borderBottomColor: "#f3f4f6" }
+                      : undefined
+                  }
                 >
                   <View className="w-10 h-10 rounded-full bg-gray-50 items-center justify-center">
                     <Ionicons name={item.icon} size={20} color="#6B7280" />
@@ -124,7 +138,7 @@ export default function AccountScreen() {
                     {item.label}
                   </Text>
                   <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </View>

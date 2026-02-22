@@ -1,5 +1,5 @@
 import axios from "axios";
-import { toast } from "react-hot-toast";
+import { toast } from "../../components/ui/Toaster";
 import { API_BASE_URL } from "../config";
 import { getAccessToken, getRefreshToken, setTokens, clearAuth } from "../auth";
 

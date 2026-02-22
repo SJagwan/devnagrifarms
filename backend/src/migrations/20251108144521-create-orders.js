@@ -56,6 +56,26 @@ module.exports = {
         allowNull: false,
         defaultValue: 0,
       },
+      total_tax: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      cgst_total: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      sgst_total: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      igst_total: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
       discount_total: {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: true,
