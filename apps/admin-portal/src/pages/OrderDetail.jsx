@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { getOrder, updateOrderStatus } from "../lib/api/orders";
 import PageHeader from "../components/ui/PageHeader";
 import PageContainer from "../components/ui/PageContainer";
@@ -158,11 +158,21 @@ export default function OrderDetail() {
                 <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
                   {order.user?.first_name?.[0]}
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">
-                    {order.user?.first_name} {order.user?.last_name}
-                  </p>
-                  <p className="text-sm text-gray-500">Customer ID: {order.user_id}</p>
+                <div className="ml-3 flex-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {order.user?.first_name} {order.user?.last_name}
+                      </p>
+                      <p className="text-sm text-gray-500">Customer ID: {order.user_id}</p>
+                    </div>
+                    <Link
+                      to={`/customers/${order.user_id}`}
+                      className="text-xs text-green-600 hover:text-green-700 font-bold uppercase tracking-wider"
+                    >
+                      View Profile
+                    </Link>
+                  </div>
                 </div>
               </div>
               <div className="border-t border-gray-100 pt-3">

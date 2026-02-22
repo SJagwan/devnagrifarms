@@ -7,6 +7,7 @@ const serviceableAreaController = require("../controllers/serviceable-area.contr
 const storageController = require("../controllers/storage.controller");
 const orderController = require("../controllers/order.controller");
 const subscriptionController = require("../controllers/subscription.controller");
+const userController = require("../controllers/user.controller");
 
 const isAdmin = (req, res, next) => {
   if (req.user.userType !== "admin") {
@@ -23,6 +24,11 @@ router.use(authenticate, isAdmin);
 router.get("/dashboard/stats", (req, res) => {
   res.json({ success: true, message: "Admin dashboard stats" });
 });
+
+// User management
+router.get("/users", userController.getUsers);
+router.get("/users/:id", userController.getUserById);
+router.patch("/users/:id/status", userController.updateStatus);
 
 // Order management
 router.get("/orders", orderController.getOrders);

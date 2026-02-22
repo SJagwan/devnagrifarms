@@ -69,4 +69,9 @@ export const adminAPI = {
     api.delete(`/admin/serviceable-areas/${id}`, {
       meta: { successMessage: "Serviceable area deleted" },
     }),
+
+  // Users
+  getUsers: (params = {}) => api.get("/admin/users", { params }),
+  getUser: (id) => api.get(`/admin/users/${id}`),
+  updateUserStatus: (id, status) => api.patch(`/admin/users/${id}/status`, { status }),
 };

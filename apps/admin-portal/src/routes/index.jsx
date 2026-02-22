@@ -8,6 +8,8 @@ import Orders from "../pages/Orders";
 import OrderDetail from "../pages/OrderDetail";
 import Subscriptions from "../pages/Subscriptions";
 import SubscriptionDetail from "../pages/SubscriptionDetail";
+import Customers from "../pages/Customers";
+import CustomerDetail from "../pages/CustomerDetail";
 
 export const protectedRoutes = [
   {
@@ -29,6 +31,14 @@ export const protectedRoutes = [
   {
     path: "/subscriptions/:id",
     element: SubscriptionDetail,
+  },
+  {
+    path: "/customers",
+    element: Customers,
+  },
+  {
+    path: "/customers/:id",
+    element: CustomerDetail,
   },
   {
     path: "/categories",
