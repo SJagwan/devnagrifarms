@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
+import { authAPI } from "../lib/api/auth.api";
 
 const AuthContext = createContext({});
 
@@ -45,6 +46,20 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const res = await authAPI.me();
+      if (res.data && res.data.user) {
+        setUser(res.data.user);
+        await SecureStore.setItemAsync("user", JSON.stringify(res.data.user));
+        return res.data.user;
+      }
+    } catch (e) {
+      console.error("Failed to refresh user profile", e);
+    }
+    return null;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -52,6 +67,7 @@ export function AuthProvider({ children }) {
         loading,
         login,
         logout,
+        refreshUser,
         isAuthenticated: !!user,
       }}
     >

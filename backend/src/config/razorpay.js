@@ -1,7 +1,9 @@
 const Razorpay = require("razorpay");
 
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-  console.warn("RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not set. Payments will not function.");
+  console.warn(
+    "RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not set. Payments will not function.",
+  );
 }
 
 const razorpay = new Razorpay({

@@ -45,6 +45,7 @@ const loginWithPassword = async (email, password, user_type, ipAddress) => {
       email: user.email,
       name: `${user.first_name} ${user.last_name}`.trim(),
       userType: user.user_type,
+      wallet_balance: parseFloat(user.wallet_balance || 0),
     },
   };
 };
@@ -88,6 +89,7 @@ const loginWithOTP = async (phone, otp, userType = null, ipAddress) => {
         ? `${user.first_name} ${user.last_name}`.trim()
         : "Customer",
       userType: user.user_type,
+      wallet_balance: parseFloat(user.wallet_balance || 0),
     },
   };
 };
@@ -130,6 +132,7 @@ const getCurrentUser = async (userId) => {
     phone: user.phone,
     userType: user.userType,
     status: user.status,
+    wallet_balance: parseFloat(user.wallet_balance || 0),
   };
 };
 

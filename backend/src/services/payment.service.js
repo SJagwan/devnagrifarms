@@ -10,16 +10,21 @@ const { sequelize } = require("../models");
  */
 const createAddFundsOrder = async (userId, amount) => {
   try {
-    // 1. Create order in Razorpay
+    // 1. Generate a secure, high-entropy transaction reference (max 40 chars)
+    // crypto.randomUUID() generates a 36 char string. We remove dashes to make it 32 chars.
+    // Adding 'wd_' makes it 35 chars total, perfectly under the 40 char limit.
+    const transactionRef = `wd_${crypto.randomUUID().replace(/-/g, '')}`;
+
+    // 2. Create order in Razorpay
     const options = {
       amount: Math.round(amount * 100), // Razorpay expects amount in paise
       currency: "INR",
-      receipt: `wallet_deposit_${userId}_${Date.now()}`,
+      receipt: transactionRef,
     };
 
     const razorpayOrder = await razorpay.orders.create(options);
 
-    // 2. Log payment intent in our DB
+    // 3. Log payment intent in our DB
     const payment = await paymentRepository.createPayment({
       user_id: userId,
       amount: amount,
@@ -43,16 +48,56 @@ const createAddFundsOrder = async (userId, amount) => {
 };
 
 /**
- * Verify Razorpay Signature (Synchronous check for UI feedback)
+ * Verify Razorpay Signature and Sync Wallet (Synchronous check for UI feedback)
  */
-const verifySignature = (orderId, paymentId, signature) => {
+const verifySignature = async (orderId, paymentId, signature) => {
   const text = orderId + "|" + paymentId;
   const generated_signature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
     .update(text)
     .digest("hex");
 
-  return generated_signature === signature;
+  if (generated_signature !== signature) {
+    return false;
+  }
+
+  // Signature is valid, let's process the payment immediately for instant UI feedback
+  const transaction = await sequelize.transaction();
+  try {
+    const payment = await paymentRepository.findByGatewayOrderId(orderId);
+    
+    if (!payment) {
+      await transaction.rollback();
+      return true; // Valid signature, but order not found in our DB (edge case)
+    }
+
+    // Idempotency: Only process if it's currently pending
+    if (payment.status === "pending") {
+      // Update Payment Record
+      await paymentRepository.updatePayment(payment.id, {
+        status: "success",
+        gateway_payment_id: paymentId,
+        method: "razorpay_sync" // We don't get the exact method from frontend verify payload, webhook will overwrite this if needed
+      }, transaction);
+
+      // Credit Wallet via Ledger
+      await walletService.addFunds(payment.user_id, payment.amount, {
+        referenceId: payment.id,
+        referenceType: "payment",
+        description: `Wallet top-up via Razorpay`,
+        transaction
+      });
+    }
+
+    await transaction.commit();
+    return true;
+  } catch (error) {
+    await transaction.rollback();
+    console.error("Synchronous Payment Verification Error:", error);
+    // Return true anyway because the signature WAS valid. 
+    // The webhook will retry the ledger update later.
+    return true; 
+  }
 };
 
 /**
@@ -86,6 +131,7 @@ const handleRazorpayWebhook = async (payload, signature) => {
 
       // 3. Idempotency Check: Don't process if already success
       if (payment.status === "success") {
+        // Just update raw response if we want, but basically ignore ledger changes
         await transaction.rollback();
         return { status: "ignored", reason: "Already processed" };
       }

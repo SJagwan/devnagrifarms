@@ -15,9 +15,9 @@ const MENU_SECTIONS = [
         route: "/account/addresses",
       },
       {
-        icon: "card-outline",
-        label: "Payment Methods",
-        route: "/account/payments",
+        icon: "wallet-outline",
+        label: "My Wallet",
+        route: "/wallet",
       },
     ],
   },
@@ -80,7 +80,8 @@ export default function AccountScreen() {
     if (
       route === "/account/addresses" ||
       route === "/orders" ||
-      route === "/account/subscriptions"
+      route === "/account/subscriptions" ||
+      route === "/wallet"
     ) {
       router.push(route);
       return;

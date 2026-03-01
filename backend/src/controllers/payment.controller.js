@@ -17,7 +17,7 @@ const createAddFundsOrder = asyncHandler(async (req, res) => {
 const verifyPayment = asyncHandler(async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
   
-  const isValid = paymentService.verifySignature(
+  const isValid = await paymentService.verifySignature(
     razorpay_order_id, 
     razorpay_payment_id, 
     razorpay_signature
