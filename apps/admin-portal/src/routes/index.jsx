@@ -1,4 +1,5 @@
 import Dashboard from "../pages/Dashboard";
+import Finance from "../pages/Finance";
 import Categories from "../pages/Categories";
 import Products from "../pages/Products";
 import ProductEdit from "../pages/ProductEdit";
@@ -15,6 +16,10 @@ export const protectedRoutes = [
   {
     path: "/",
     element: Dashboard,
+  },
+  {
+    path: "/finance",
+    element: Finance,
   },
   {
     path: "/orders",
