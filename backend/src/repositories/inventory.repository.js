@@ -1,11 +1,11 @@
 const { Inventory, ProductVariant } = require("../models");
 const { Op } = require("sequelize");
 
-// Check if sufficient stock exists across all warehouses
-// Returns total available quantity
-const getAvailableStock = async (variantId) => {
+// Checks stock across all warehouses
+const getAvailableStock = async (variantId, options = {}) => {
   const inventory = await Inventory.findAll({
     where: { product_variant_id: variantId },
+    ...options
   });
 
   const totalQuantity = inventory.reduce((sum, item) => sum + item.quantity, 0);
@@ -17,10 +17,8 @@ const getAvailableStock = async (variantId) => {
   return totalQuantity - totalReserved;
 };
 
-// Reduce stock (simple FIFO or just pick first warehouse for MVP)
-// In a real app, this would select specific warehouse logic.
+// Simple FIFO stock reduction. In a multi-warehouse setup, this requires specific warehouse selection logic.
 const reduceStock = async (variantId, quantity, transaction) => {
-  // Find inventory records for this variant with available stock
   const inventoryRecords = await Inventory.findAll({
     where: {
       product_variant_id: variantId,
@@ -40,9 +38,8 @@ const reduceStock = async (variantId, quantity, transaction) => {
     if (availableInRecord > 0) {
       const deduction = Math.min(availableInRecord, remainingToDeduct);
       
-      // Decrease quantity (Sold)
-      // Note: We are directly reducing quantity for MVP flow.
-      // If we supported "Reserve then Confirm", we would inc reserved_quantity.
+      // Note: Directly reducing quantity for MVP flow.
+      // A "Reserve then Confirm" flow would increment reserved_quantity instead.
       await record.decrement("quantity", { by: deduction, transaction });
       
       remainingToDeduct -= deduction;

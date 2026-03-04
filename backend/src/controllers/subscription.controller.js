@@ -161,6 +161,18 @@ const adminUpdateStatus = asyncHandler(async (req, res) => {
   });
 });
 
+// Webhook Controllers
+const processDailySubscriptions = asyncHandler(async (req, res) => {
+  // This is triggered by AWS EventBridge every day (e.g. at 12:00 AM)
+  const result = await subscriptionService.processDailySubscriptions();
+  
+  res.json({
+    success: true,
+    message: "Daily subscriptions processed successfully",
+    data: result,
+  });
+});
+
 module.exports = {
   createSubscription,
   getSubscriptions,
@@ -173,4 +185,5 @@ module.exports = {
   adminUpdateStatus,
   skipDelivery,
   unskipDelivery,
+  processDailySubscriptions,
 };

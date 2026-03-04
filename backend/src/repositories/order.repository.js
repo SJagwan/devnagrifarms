@@ -1,17 +1,20 @@
-const { Order, OrderItem, User, ProductVariant, Product } = require("../models");
+const {
+  Order,
+  OrderItem,
+  User,
+  ProductVariant,
+  Product,
+} = require("../models");
 const { Op } = require("sequelize");
 
 const createOrder = async (orderData, itemsData, transaction) => {
-  // Create the main order record
   const order = await Order.create(orderData, { transaction });
 
-  // Prepare items with the generated order_id
   const itemsWithOrderId = itemsData.map((item) => ({
     ...item,
     order_id: order.id,
   }));
 
-  // Bulk create order items
   await OrderItem.bulkCreate(itemsWithOrderId, { transaction });
 
   return order;
@@ -103,9 +106,22 @@ const updateOrder = async (id, updateData, transaction) => {
   return updatedRows > 0;
 };
 
+/**
+ * Check if a subscription order already exists for a given date.
+ * Used for idempotency in the daily subscription cron.
+ */
+const findSubscriptionOrderByDate = async (subscriptionId, deliveryDate, options = {}) => {
+  return await Order.findOne({
+    where: { subscription_id: subscriptionId, delivery_date: deliveryDate },
+    attributes: ["id"],
+    ...options
+  });
+};
+
 module.exports = {
   createOrder,
   getOrdersPaged,
   getOrderById,
   updateOrder,
+  findSubscriptionOrderByDate,
 };

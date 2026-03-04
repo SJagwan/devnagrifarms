@@ -179,6 +179,23 @@ const updateSubscription = async (id, updateData) => {
   return updatedRows > 0;
 };
 
+/**
+ * Fetch all active subscriptions with their items for cron processing.
+ * Eager-loads items with variant IDs needed for order creation.
+ */
+const getActiveSubscriptionsForProcessing = async () => {
+  return await Subscription.findAll({
+    where: { status: "active" },
+    include: [
+      {
+        model: SubscriptionItem,
+        as: "items",
+        attributes: ["product_variant_id", "quantity", "price"],
+      },
+    ],
+  });
+};
+
 module.exports = {
   createSubscription,
   getSubscriptionsByUserId,
@@ -187,4 +204,5 @@ module.exports = {
   updateSubscriptionStatus,
   updateSkipDates,
   updateSubscription,
+  getActiveSubscriptionsForProcessing,
 };

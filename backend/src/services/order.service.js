@@ -6,128 +6,148 @@ const productVariantRepository = require("../repositories/product-variant.reposi
 const AppError = require("../utils/AppError");
 
 /**
+ * Shared helper to validate address, check stock, compute taxes, and reduce inventory.
+ * Must be executed within a transaction to guarantee atomic inventory reduction.
+ */
+const _prepareOrderData = async (userId, shippingAddressId, items, transaction) => {
+  const address = await addressRepository.getAddressById(
+    shippingAddressId,
+    userId,
+  );
+  if (!address) {
+    throw new AppError("Shipping address not found or invalid", 400);
+  }
+
+  const shippingAddressSnapshot = {
+    address_line_1: address.address_line_1,
+    address_line_2: address.address_line_2,
+    city: address.city,
+    state: address.state,
+    country: address.country,
+    zip_code: address.zip_code,
+    phone: address.phone, // Documented assumption: phone might be stored in address or user profile
+  };
+
+  let subtotal = 0;
+  let totalTax = 0;
+  let totalCgst = 0;
+  let totalSgst = 0;
+  let totalIgst = 0;
+  const orderItemsData = [];
+
+  for (const item of items) {
+    const { variantId, quantity } = item;
+
+    const variant = await productVariantRepository.getVariantById(variantId);
+    if (!variant) {
+      throw new AppError(`Product variant not found: ${variantId}`, 400);
+    }
+
+    if (!variant.is_active) {
+      throw new AppError(
+        `Product is currently unavailable: ${variant.sku}`,
+        400,
+      );
+    }
+
+    const availableStock = await inventoryRepository.getAvailableStock(variantId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE
+    });
+    if (availableStock < quantity) {
+      throw new AppError(
+        `Insufficient stock for ${variant.sku}. Available: ${availableStock}`,
+        400,
+      );
+    }
+
+    // Reduces stock via the shared transaction to ensure atomicity
+    await inventoryRepository.reduceStock(variantId, quantity, transaction);
+
+    const price = parseFloat(variant.price);
+    const taxPercent = parseFloat(variant.product?.default_tax || 0);
+    const hsnCode = variant.product?.hsn_code;
+    const discountPercent = variant.discount_percent || 0;
+
+    const lineTotal = price * quantity;
+    const taxAmount = (lineTotal * taxPercent) / 100;
+
+    // GST Split. Assumption for MVP: Intra-state delivery (50% CGST, 50% SGST, 0% IGST)
+    const cgstRate = taxPercent / 2;
+    const sgstRate = taxPercent / 2;
+    const igstRate = 0;
+
+    const cgstAmount = taxAmount / 2;
+    const sgstAmount = taxAmount / 2;
+    const igstAmount = 0;
+
+    subtotal += lineTotal;
+    totalTax += taxAmount;
+    totalCgst += cgstAmount;
+    totalSgst += sgstAmount;
+    totalIgst += igstAmount;
+
+    orderItemsData.push({
+      product_variant_id: variantId,
+      hsn_code: hsnCode,
+      quantity,
+      price,
+      tax_percent: taxPercent,
+      cgst_rate: cgstRate,
+      sgst_rate: sgstRate,
+      igst_rate: igstRate,
+      tax_amount: taxAmount,
+      cgst_amount: cgstAmount,
+      sgst_amount: sgstAmount,
+      igst_amount: igstAmount,
+      discount_percent: discountPercent,
+      total_price: lineTotal + taxAmount,
+    });
+  }
+
+  const totalPrice = subtotal + totalTax;
+
+  return {
+    shippingAddressSnapshot,
+    orderItemsData,
+    totals: {
+      totalPrice,
+      totalTax,
+      totalCgst,
+      totalSgst,
+      totalIgst,
+    },
+  };
+};
+
+/**
  * Place a new order
  */
 const placeOrder = async (
   userId,
   { items, shippingAddressId, deliverySlot, deliveryDate, notes },
+  externalTransaction = null,
 ) => {
-  const transaction = await sequelize.transaction();
+  const transaction = externalTransaction || await sequelize.transaction();
 
   try {
-    // 1. Validate Address
-    const address = await addressRepository.getAddressById(
-      shippingAddressId,
-      userId,
-    );
-    if (!address) {
-      throw new AppError("Shipping address not found or invalid", 400);
-    }
+    const {
+      shippingAddressSnapshot,
+      orderItemsData,
+      totals,
+    } = await _prepareOrderData(userId, shippingAddressId, items, transaction);
 
-    // Snapshot of address for the order record
-    const shippingAddressSnapshot = {
-      address_line_1: address.address_line_1,
-      address_line_2: address.address_line_2,
-      city: address.city,
-      state: address.state,
-      country: address.country,
-      zip_code: address.zip_code,
-      phone: address.phone, // Assuming phone might be in address or user
-    };
-
-    // 2. Process Items & Calculate Totals
-    let subtotal = 0;
-    let totalTax = 0;
-    let totalCgst = 0;
-    let totalSgst = 0;
-    let totalIgst = 0;
-    const orderItemsData = [];
-
-    for (const item of items) {
-      const { variantId, quantity } = item;
-
-      // Fetch Variant Details (now includes Product via updated repository)
-      const variant = await productVariantRepository.getVariantById(variantId);
-      if (!variant) {
-        throw new AppError(`Product variant not found: ${variantId}`, 400);
-      }
-
-      if (!variant.is_active) {
-        throw new AppError(
-          `Product is currently unavailable: ${variant.sku}`,
-          400,
-        );
-      }
-
-      // Check Stock
-      const availableStock =
-        await inventoryRepository.getAvailableStock(variantId);
-      if (availableStock < quantity) {
-        throw new AppError(
-          `Insufficient stock for ${variant.sku}. Available: ${availableStock}`,
-          400,
-        );
-      }
-
-      // Reduce Stock (Locking happens inside repository)
-      await inventoryRepository.reduceStock(variantId, quantity, transaction);
-
-      // Price Calculation
-      const price = parseFloat(variant.price); // Unit Price
-      const taxPercent = parseFloat(variant.product?.default_tax || 0);
-      const hsnCode = variant.product?.hsn_code;
-      const discountPercent = variant.discount_percent || 0;
-
-      const lineTotal = price * quantity;
-      const taxAmount = (lineTotal * taxPercent) / 100;
-
-      // GST Split (Assuming Intra-state: 50/50 split between CGST and SGST)
-      const cgstRate = taxPercent / 2;
-      const sgstRate = taxPercent / 2;
-      const igstRate = 0; // Assuming Intra-state for MVP
-
-      const cgstAmount = taxAmount / 2;
-      const sgstAmount = taxAmount / 2;
-      const igstAmount = 0;
-
-      subtotal += lineTotal;
-      totalTax += taxAmount;
-      totalCgst += cgstAmount;
-      totalSgst += sgstAmount;
-      totalIgst += igstAmount;
-
-      orderItemsData.push({
-        product_variant_id: variantId,
-        hsn_code: hsnCode,
-        quantity,
-        price,
-        tax_percent: taxPercent,
-        cgst_rate: cgstRate,
-        sgst_rate: sgstRate,
-        igst_rate: igstRate,
-        tax_amount: taxAmount,
-        cgst_amount: cgstAmount,
-        sgst_amount: sgstAmount,
-        igst_amount: igstAmount,
-        discount_percent: discountPercent,
-        total_price: lineTotal + taxAmount,
-      });
-    }
-
-    const totalPrice = subtotal + totalTax;
-
-    // 3. Create Order
     const orderData = {
       user_id: userId,
       shipping_address_id: shippingAddressId,
       shipping_address_snapshot: shippingAddressSnapshot,
-      total_price: totalPrice,
-      total_tax: totalTax,
-      cgst_total: totalCgst,
-      sgst_total: totalSgst,
-      igst_total: totalIgst,
-      status: "pending", // Default
-      payment_status: "unpaid", // Default
+      total_price: totals.totalPrice,
+      total_tax: totals.totalTax,
+      cgst_total: totals.totalCgst,
+      sgst_total: totals.totalSgst,
+      igst_total: totals.totalIgst,
+      status: "pending",
+      payment_status: "unpaid",
       delivery_slot: deliverySlot || "morning",
       delivery_date: deliveryDate,
       notes,
@@ -139,10 +159,59 @@ const placeOrder = async (
       transaction,
     );
 
-    await transaction.commit();
+    if (!externalTransaction) await transaction.commit();
     return order;
   } catch (error) {
-    await transaction.rollback();
+    if (!externalTransaction) await transaction.rollback();
+    throw error;
+  }
+};
+
+/**
+ * Create a specialized order from an automated subscription run
+ * Accepts an external transaction from the cron job
+ */
+const createSubscriptionOrder = async (
+  userId,
+  subscriptionId,
+  { items, shippingAddressId, deliverySlot, deliveryDate, notes },
+  externalTransaction
+) => {
+  if (!externalTransaction) {
+    throw new Error("Subscription orders must be run within an existing wallet transaction");
+  }
+
+  try {
+    const {
+      shippingAddressSnapshot,
+      orderItemsData,
+      totals,
+    } = await _prepareOrderData(userId, shippingAddressId, items, externalTransaction);
+
+    const orderData = {
+      user_id: userId,
+      subscription_id: subscriptionId, // Crucial: Links the order back to its parent subscription
+      shipping_address_id: shippingAddressId,
+      shipping_address_snapshot: shippingAddressSnapshot,
+      total_price: totals.totalPrice,
+      total_tax: totals.totalTax,
+      cgst_total: totals.totalCgst,
+      sgst_total: totals.totalSgst,
+      igst_total: totals.totalIgst,
+      status: "confirmed", // Cron orders are pre-confirmed
+      payment_status: "paid", // Wallet deduction is guaranteed by the wrapping transaction
+      delivery_slot: deliverySlot || "morning",
+      delivery_date: deliveryDate,
+      notes: notes || "Auto-generated subscription order",
+    };
+
+    return await orderRepository.createOrder(
+      orderData,
+      orderItemsData,
+      externalTransaction,
+    );
+  } catch (error) {
+    // Note: Do NOT rollback here. The caller (subscription engine) is responsible for rolling back the entire wallet+order process.
     throw error;
   }
 };
@@ -219,15 +288,13 @@ const updateOrderStatus = async (id, status) => {
     throw new AppError("Order not found", 404);
   }
 
-  // TODO: Add valid status transitions state machine check here if needed
-  // e.g. pending -> confirmed -> delivered
-
   await orderRepository.updateOrder(id, { status });
   return { id, status };
 };
 
 module.exports = {
   placeOrder,
+  createSubscriptionOrder,
   getAllOrders,
   getUserOrders,
   getOrderById,

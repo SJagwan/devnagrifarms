@@ -127,6 +127,13 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "orders",
       timestamps: true,
       underscored: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ["subscription_id", "delivery_date"],
+          name: "orders_subscription_id_delivery_date_unique",
+        },
+      ],
     },
   );
 
