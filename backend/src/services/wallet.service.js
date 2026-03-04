@@ -105,6 +105,10 @@ const manualAdjustment = async (userId, amount, description, adminId) => {
   });
 };
 
+const getBalanceForUpdate = async (userId, transaction) => {
+  return await walletRepository.getBalanceForUpdate(userId, transaction);
+};
+
 const getPassbook = async (userId, query) => {
   const { page = 1, limit = 10 } = query;
   const { rows, count } = await walletRepository.getTransactionsPaged(userId, {
@@ -148,6 +152,7 @@ module.exports = {
   deductFunds,
   refundFunds,
   manualAdjustment,
+  getBalanceForUpdate,
   getPassbook,
   getAllTransactions,
 };

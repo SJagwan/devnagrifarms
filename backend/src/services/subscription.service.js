@@ -6,6 +6,7 @@ const orderRepository = require("../repositories/order.repository");
 const walletService = require("./wallet.service");
 const orderService = require("./order.service");
 const AppError = require("../utils/AppError");
+const { SUBSCRIPTION_MIN_BALANCE } = require("../constants/wallet.constants");
 
 const createSubscription = async (userId, data) => {
   const transaction = await sequelize.transaction();
@@ -18,6 +19,14 @@ const createSubscription = async (userId, data) => {
       startDate,
       deliverySlot,
     } = data;
+
+    const user = await walletService.getBalanceForUpdate(userId, transaction);
+    if (parseFloat(user.wallet_balance) < SUBSCRIPTION_MIN_BALANCE) {
+      throw new AppError(
+        `A minimum wallet balance of ₹${SUBSCRIPTION_MIN_BALANCE} is required to start a subscription.`,
+        400
+      );
+    }
 
     const address = await addressRepository.getAddressById(
       shippingAddressId,

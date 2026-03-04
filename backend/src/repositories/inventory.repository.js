@@ -8,9 +8,9 @@ const getAvailableStock = async (variantId, options = {}) => {
     ...options
   });
 
-  const totalQuantity = inventory.reduce((sum, item) => sum + item.quantity, 0);
+  const totalQuantity = inventory.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   const totalReserved = inventory.reduce(
-    (sum, item) => sum + item.reserved_quantity,
+    (sum, item) => sum + Number(item.reserved_quantity || 0),
     0
   );
 
@@ -28,12 +28,12 @@ const reduceStock = async (variantId, quantity, transaction) => {
     lock: transaction.LOCK.UPDATE, // Lock rows to prevent race conditions
   });
 
-  let remainingToDeduct = quantity;
+  let remainingToDeduct = Number(quantity);
 
   for (const record of inventoryRecords) {
     if (remainingToDeduct <= 0) break;
 
-    const availableInRecord = record.quantity - record.reserved_quantity;
+    const availableInRecord = Number(record.quantity || 0) - Number(record.reserved_quantity || 0);
 
     if (availableInRecord > 0) {
       const deduction = Math.min(availableInRecord, remainingToDeduct);

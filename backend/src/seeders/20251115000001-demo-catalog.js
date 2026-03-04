@@ -48,8 +48,8 @@ module.exports = {
         name: "Buffalo Milk",
         description: "Pure, fresh A2 Buffalo Milk delivered daily.",
         is_subscribable: true,
-        is_one_time_allowed: false, // Subscription only
-        default_tax: 0, // No tax on raw milk
+        is_one_time_allowed: false,
+        default_tax: 0,
         created_at: new Date(),
         updated_at: new Date(),
       },
@@ -59,7 +59,7 @@ module.exports = {
         name: "Pure Cow Ghee",
         description: "Traditional Bilona method Ghee.",
         is_subscribable: true,
-        is_one_time_allowed: true, // Both allowed
+        is_one_time_allowed: true,
         default_tax: 12,
         created_at: new Date(),
         updated_at: new Date(),
@@ -70,7 +70,7 @@ module.exports = {
         name: "Malai Paneer",
         description: "Soft and fresh paneer made from buffalo milk.",
         is_subscribable: true,
-        is_one_time_allowed: false, // Subscription only for perishables often
+        is_one_time_allowed: false,
         default_tax: 5,
         created_at: new Date(),
         updated_at: new Date(),
@@ -91,7 +91,7 @@ module.exports = {
         category_id: bakeryId,
         name: "Sourdough Bread",
         description: "Artisan sourdough bread, baked fresh daily.",
-        is_subscribable: true, // Daily bread subscription!
+        is_subscribable: true,
         is_one_time_allowed: true,
         default_tax: 5,
         created_at: new Date(),
@@ -109,7 +109,6 @@ module.exports = {
     const breadId = products[4].id;
 
     const variants = [
-      // Milk Variants
       {
         id: uuidv4(),
         product_id: milkId,
@@ -138,7 +137,6 @@ module.exports = {
         created_at: new Date(),
         updated_at: new Date(),
       },
-      // Ghee Variants
       {
         id: uuidv4(),
         product_id: gheeId,
@@ -153,7 +151,6 @@ module.exports = {
         created_at: new Date(),
         updated_at: new Date(),
       },
-      // Paneer
       {
         id: uuidv4(),
         product_id: paneerId,
@@ -168,7 +165,6 @@ module.exports = {
         created_at: new Date(),
         updated_at: new Date(),
       },
-      // Potato
       {
         id: uuidv4(),
         product_id: potatoId,
@@ -183,7 +179,6 @@ module.exports = {
         created_at: new Date(),
         updated_at: new Date(),
       },
-      // Bread
       {
         id: uuidv4(),
         product_id: breadId,
@@ -201,9 +196,23 @@ module.exports = {
     ];
 
     await queryInterface.bulkInsert("product_variants", variants);
+
+    // 4. Initialize Inventory for all variants
+    const inventory = variants.map((v) => ({
+      id: uuidv4(),
+      product_variant_id: v.id,
+      warehouse: "warehouse_1",
+      quantity: 100,
+      reserved_quantity: 0,
+      created_at: new Date(),
+      updated_at: new Date(),
+    }));
+
+    await queryInterface.bulkInsert("inventory", inventory);
   },
 
   down: async (queryInterface, Sequelize) => {
+    await queryInterface.bulkDelete("inventory", null, {});
     await queryInterface.bulkDelete("product_variants", null, {});
     await queryInterface.bulkDelete("products", null, {});
     await queryInterface.bulkDelete("categories", null, {});

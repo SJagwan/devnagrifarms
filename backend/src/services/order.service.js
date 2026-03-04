@@ -3,6 +3,7 @@ const orderRepository = require("../repositories/order.repository");
 const inventoryRepository = require("../repositories/inventory.repository");
 const addressRepository = require("../repositories/address.repository");
 const productVariantRepository = require("../repositories/product-variant.repository");
+const walletService = require("./wallet.service");
 const AppError = require("../utils/AppError");
 
 /**
@@ -121,7 +122,9 @@ const _prepareOrderData = async (userId, shippingAddressId, items, transaction) 
 };
 
 /**
- * Place a new order
+ * Place a new order. 
+ * All orders are strictly wallet-based (prepaid). 
+ * If 'online' is selected in frontend, the frontend must top up the wallet first.
  */
 const placeOrder = async (
   userId,
@@ -137,6 +140,12 @@ const placeOrder = async (
       totals,
     } = await _prepareOrderData(userId, shippingAddressId, items, transaction);
 
+    await walletService.deductFunds(userId, totals.totalPrice, {
+      referenceType: "order",
+      description: `Payment for order on ${deliveryDate}`,
+      transaction,
+    });
+
     const orderData = {
       user_id: userId,
       shipping_address_id: shippingAddressId,
@@ -146,8 +155,8 @@ const placeOrder = async (
       cgst_total: totals.totalCgst,
       sgst_total: totals.totalSgst,
       igst_total: totals.totalIgst,
-      status: "pending",
-      payment_status: "unpaid",
+      status: "confirmed",
+      payment_status: "paid",
       delivery_slot: deliverySlot || "morning",
       delivery_date: deliveryDate,
       notes,
