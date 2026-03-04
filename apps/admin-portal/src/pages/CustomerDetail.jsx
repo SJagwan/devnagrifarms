@@ -82,11 +82,9 @@ const WalletPassbook = ({ transactions, loading }) => (
                   {tx.description || "-"}
                 </td>
                 <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold text-right ${
-                  ["deposit", "refund"].includes(tx.type) ? "text-green-600" :
-                  ["purchase", "withdrawal"].includes(tx.type) ? "text-red-600" :
-                  "text-blue-600"
+                  tx.direction === "credit" ? "text-green-600" : "text-red-600"
                 }`}>
-                  {["deposit", "refund"].includes(tx.type) ? "+" : ["purchase", "withdrawal"].includes(tx.type) ? "-" : ""}₹{tx.amount}
+                  {tx.direction === "credit" ? "+" : "-"}₹{tx.amount}
                 </td>
               </tr>
             ))}

@@ -3,18 +3,18 @@ const walletRepository = require("../repositories/wallet.repository");
 const AppError = require("../utils/AppError");
 
 /**
- * Common private method to handle balance updates and transaction logging
+ * Handles balance updates and transaction logging.
+ * Atomic and protected by row-level locking.
  */
 const _updateUserWallet = async (
   userId,
   amount,
   type,
-  { referenceId, referenceType, description, transaction: existingTransaction },
+  { referenceId, referenceType, metadata, description, transaction: existingTransaction },
 ) => {
   const transaction = existingTransaction || (await sequelize.transaction());
 
   try {
-    // 1. Get current balance with lock
     const user = await walletRepository.getBalanceForUpdate(
       userId,
       transaction,
@@ -24,26 +24,27 @@ const _updateUserWallet = async (
     const currentBalance = parseFloat(user.wallet_balance);
     const newBalance = currentBalance + parseFloat(amount);
 
-    // 2. Safety check for debits
     if (newBalance < 0) {
       throw new AppError("Insufficient wallet balance", 400);
     }
 
-    // 3. Create Transaction Record
+    const direction = amount >= 0 ? "credit" : "debit";
+
     await walletRepository.createTransaction(
       {
         user_id: userId,
-        amount: Math.abs(amount), // store absolute value, type defines direction
-        type, // 'deposit', 'purchase', 'refund', 'adjustment'
+        amount: Math.abs(amount), // Store absolute value; direction defines polarity
+        direction,
+        type,
         balance_after: newBalance,
         reference_id: referenceId,
         reference_type: referenceType,
+        metadata,
         description,
       },
       transaction,
     );
 
-    // 4. Update User Balance
     await walletRepository.updateBalance(userId, newBalance, transaction);
 
     if (!existingTransaction) await transaction.commit();
@@ -55,66 +56,55 @@ const _updateUserWallet = async (
   }
 };
 
-/**
- * Credit funds to user wallet
- */
 const addFunds = async (
   userId,
   amount,
-  { referenceId, referenceType, description, transaction },
+  { referenceId, referenceType, metadata, description, transaction },
 ) => {
   return await _updateUserWallet(userId, amount, "deposit", {
     referenceId,
     referenceType,
+    metadata,
     description,
     transaction,
   });
 };
 
-/**
- * Debit funds from user wallet
- */
 const deductFunds = async (
   userId,
   amount,
-  { referenceId, referenceType, description, transaction },
+  { referenceId, referenceType, metadata, description, transaction },
 ) => {
   return await _updateUserWallet(userId, -amount, "purchase", {
     referenceId,
     referenceType,
+    metadata,
     description,
     transaction,
   });
 };
 
-/**
- * Refund funds to user wallet
- */
 const refundFunds = async (
   userId,
   amount,
-  { referenceId, referenceType, description, transaction },
+  { referenceId, referenceType, metadata, description, transaction },
 ) => {
   return await _updateUserWallet(userId, amount, "refund", {
     referenceId,
     referenceType,
+    metadata,
     description,
     transaction,
   });
 };
 
-/**
- * Admin manual adjustment
- */
 const manualAdjustment = async (userId, amount, description, adminId) => {
   return await _updateUserWallet(userId, amount, "adjustment", {
     description: `[Manual ADJ by Admin ${adminId}] ${description}`,
+    metadata: { admin_id: adminId },
   });
 };
 
-/**
- * Get user passbook history
- */
 const getPassbook = async (userId, query) => {
   const { page = 1, limit = 10 } = query;
   const { rows, count } = await walletRepository.getTransactionsPaged(userId, {
@@ -133,9 +123,6 @@ const getPassbook = async (userId, query) => {
   };
 };
 
-/**
- * Get system-wide transactions (Admin)
- */
 const getAllTransactions = async (query) => {
   const { page = 1, limit = 10, type, userId } = query;
   const { rows, count } = await walletRepository.getAllTransactionsPaged({

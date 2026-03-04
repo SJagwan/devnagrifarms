@@ -8,7 +8,6 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "user_id",
         as: "user",
       });
-      // Polymorphic association helper could go here, but keeping it simple for now
     }
   }
 
@@ -26,6 +25,10 @@ module.exports = (sequelize, DataTypes) => {
       },
       amount: {
         type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+      },
+      direction: {
+        type: DataTypes.ENUM("credit", "debit"),
         allowNull: false,
       },
       type: {
@@ -48,6 +51,10 @@ module.exports = (sequelize, DataTypes) => {
       },
       reference_type: {
         type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      metadata: {
+        type: DataTypes.JSON,
         allowNull: true,
       },
       description: {

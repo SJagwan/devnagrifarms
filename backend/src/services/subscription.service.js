@@ -395,6 +395,7 @@ const processDailySubscriptions = async () => {
           {
             referenceId: sub.id,
             referenceType: "subscription",
+            metadata: { order_id: order.id },
             description: `Subscription order for ${todayStr}`,
             transaction,
           },

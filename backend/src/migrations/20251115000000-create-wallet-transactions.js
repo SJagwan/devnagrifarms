@@ -22,7 +22,12 @@ module.exports = {
       amount: {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
-        comment: "Positive for credit, negative for debit",
+        comment: "Absolute amount of the transaction",
+      },
+      direction: {
+        type: Sequelize.ENUM("credit", "debit"),
+        allowNull: false,
+        comment: "Explicit direction for UI and auditing: credit (+) or debit (-)",
       },
       type: {
         type: Sequelize.ENUM(
@@ -42,12 +47,17 @@ module.exports = {
       reference_id: {
         type: Sequelize.UUID,
         allowNull: true,
-        comment: "ID of the related Order or Payment",
+        comment: "ID of the related Order, Payment, or Subscription",
       },
       reference_type: {
         type: Sequelize.STRING(50),
         allowNull: true,
-        comment: "'order' or 'payment'",
+        comment: "'order', 'payment', or 'subscription'",
+      },
+      metadata: {
+        type: Sequelize.JSON,
+        allowNull: true,
+        comment: "Extra context: { sub_id, admin_id, reason, original_order_id }",
       },
       description: {
         type: Sequelize.STRING(255),
@@ -66,6 +76,7 @@ module.exports = {
     });
 
     await queryInterface.addIndex("wallet_transactions", ["user_id"]);
+    await queryInterface.addIndex("wallet_transactions", ["reference_id", "reference_type"]);
   },
 
   down: async (queryInterface, Sequelize) => {

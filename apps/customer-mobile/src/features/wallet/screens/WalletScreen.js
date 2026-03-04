@@ -47,28 +47,19 @@ export default function WalletScreen() {
   );
 
   const renderTransaction = ({ item }) => {
-    const isCredit =
-      ["deposit", "refund", "adjustment"].includes(item.type) &&
-      item.amount > 0;
-    // Note: adjustment can be negative, but let's assume amount is stored as absolute and type defines direction,
-    // actually backend stores absolute amount and type defines direction. If adjustment is negative, we might need to check balance_after.
-    // Let's assume deposit/refund are credit. Purchase is debit.
-    const actualIsCredit =
-      item.type === "deposit" ||
-      item.type === "refund" ||
-      (item.type === "adjustment" && item.amount > 0);
+    const isCredit = item.direction === "credit";
 
     return (
       <View className="bg-white p-4 mb-3 rounded-2xl border border-gray-100 flex-row items-center">
         <View
           className={`w-12 h-12 rounded-full items-center justify-center ${
-            actualIsCredit ? "bg-green-100" : "bg-red-100"
+            isCredit ? "bg-green-100" : "bg-red-100"
           }`}
         >
           <Ionicons
-            name={actualIsCredit ? "arrow-down" : "arrow-up"}
+            name={isCredit ? "arrow-down" : "arrow-up"}
             size={20}
-            color={actualIsCredit ? "#16a34a" : "#dc2626"}
+            color={isCredit ? "#16a34a" : "#dc2626"}
           />
         </View>
         <View className="flex-1 ml-4">
@@ -96,10 +87,10 @@ export default function WalletScreen() {
         <View className="items-end">
           <Text
             className={`font-bold text-lg ${
-              actualIsCredit ? "text-green-600" : "text-gray-900"
+              isCredit ? "text-green-600" : "text-gray-900"
             }`}
           >
-            {actualIsCredit ? "+" : "-"}₹
+            {isCredit ? "+" : "-"}₹
             {parseFloat(Math.abs(item.amount)).toFixed(2)}
           </Text>
           <Text className="text-gray-400 text-xs mt-1">

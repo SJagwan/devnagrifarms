@@ -30,17 +30,12 @@ export default function Finance() {
     }
   };
 
-  const getTransactionColor = (type, amount) => {
-    if (type === "deposit" || type === "refund") return "text-green-600";
-    if (type === "purchase" || type === "withdrawal") return "text-red-600";
-    // Adjustment could be positive or negative
-    return "text-blue-600";
+  const getTransactionColor = (direction) => {
+    return direction === "credit" ? "text-green-600" : "text-red-600";
   };
 
-  const getTransactionSign = (type) => {
-    if (type === "deposit" || type === "refund") return "+";
-    if (type === "purchase" || type === "withdrawal") return "-";
-    return "";
+  const getTransactionSign = (direction) => {
+    return direction === "credit" ? "+" : "-";
   };
 
   return (
@@ -92,8 +87,8 @@ export default function Finance() {
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={tx.description}>
                         {tx.description || "-"}
                       </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold text-right ${getTransactionColor(tx.type, tx.amount)}`}>
-                        {getTransactionSign(tx.type)}₹{tx.amount}
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold text-right ${getTransactionColor(tx.direction)}`}>
+                        {getTransactionSign(tx.direction)}₹{tx.amount}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right font-medium">
                         ₹{tx.balance_after}
