@@ -131,6 +131,10 @@ module.exports = {
     await queryInterface.addIndex("orders", ["status"], {
       name: "orders_status_idx",
     });
+    await queryInterface.addIndex("orders", ["subscription_id", "delivery_date"], {
+      name: "orders_subscription_id_delivery_date_unique",
+      unique: true,
+    });
   },
 
   down: async (queryInterface, Sequelize) => {

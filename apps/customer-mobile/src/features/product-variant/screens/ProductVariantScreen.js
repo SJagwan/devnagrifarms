@@ -11,11 +11,13 @@ import { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { customerAPI } from "@lib/api";
 import { useCart } from "@context/CartContext";
+import { useAuth } from "@context/AuthContext";
 
 export default function ProductVariantScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { addToCart } = useCart();
+  const { user, refreshUser } = useAuth();
   const [product, setProduct] = useState(null);
   const [variants, setVariants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,7 @@ export default function ProductVariantScreen() {
 
   useEffect(() => {
     fetchData();
+    refreshUser();
   }, [id]);
 
   const fetchData = async () => {
@@ -60,6 +63,36 @@ export default function ProductVariantScreen() {
     setQty(variant.id, minQty);
   };
 
+  const handleSubscribe = async (variant) => {
+    const minBalance = 500;
+    const currentBalance = parseFloat(user?.wallet_balance || 0);
+
+    if (currentBalance < minBalance) {
+      Alert.alert(
+        "Low Wallet Balance",
+        `A minimum wallet balance of ₹${minBalance} is required to start a subscription.`,
+        [
+          {
+            text: "Add Funds",
+            onPress: () => router.push("/wallet/add-funds"),
+          },
+          { text: "Cancel", style: "cancel" },
+        ],
+      );
+      return;
+    }
+
+    router.push({
+      pathname: "/subscription/setup",
+      params: {
+        variantId: variant.id,
+        productName: product.name,
+        unit: variant.unit,
+        price: variant.price,
+      },
+    });
+  };
+
   const formatPrice = (price) => {
     if (price == null || isNaN(price)) return "₹0";
     return `₹${parseFloat(price).toFixed(0)}`;
@@ -90,11 +123,8 @@ export default function ProductVariantScreen() {
           elevation: 3,
         }}
       >
-        {/* Header Row */}
         <View className="flex-row items-start justify-between mb-3">
-          {/* Variant Info */}
           <View className="flex-1">
-            {/* Type & Source badges */}
             <View className="flex-row flex-wrap mb-2">
               {variant.type && (
                 <View className="bg-blue-50 px-2 py-1 rounded-full mr-2 mb-1">
@@ -119,7 +149,6 @@ export default function ProductVariantScreen() {
               )}
             </View>
 
-            {/* Size */}
             <Text className="text-lg font-bold text-gray-900">
               {variant.quantity} {variant.unit}
             </Text>
@@ -128,7 +157,6 @@ export default function ProductVariantScreen() {
             </Text>
           </View>
 
-          {/* Discount Badge */}
           {discount > 0 && (
             <View className="bg-green-500 px-2 py-1 rounded-lg">
               <Text className="text-xs font-bold text-white">
@@ -138,7 +166,6 @@ export default function ProductVariantScreen() {
           )}
         </View>
 
-        {/* Price Row */}
         <View className="flex-row items-center justify-between pt-3 border-t border-gray-100 mb-3">
           <View className="flex-row items-baseline">
             <Text className="text-xl font-bold text-green-600">
@@ -153,7 +180,6 @@ export default function ProductVariantScreen() {
           </View>
         </View>
 
-        {/* Quantity Selector */}
         {(() => {
           const minQty = variant.min_order_qty || 1;
           const maxQty = variant.max_order_qty;
@@ -189,9 +215,7 @@ export default function ProductVariantScreen() {
           );
         })()}
 
-        {/* Actions Row */}
         <View className="flex-row gap-3">
-          {/* Add to Cart Button */}
           <Pressable
             onPress={() => handleAddToCart(variant)}
             className="flex-1 bg-white border border-green-600 flex-row items-center justify-center px-4 py-3 rounded-xl"
@@ -200,19 +224,8 @@ export default function ProductVariantScreen() {
             <Text className="text-green-600 font-bold ml-2">Add to Cart</Text>
           </Pressable>
 
-          {/* Subscribe Button */}
           <Pressable
-            onPress={() =>
-              router.push({
-                pathname: "/subscription/setup",
-                params: {
-                  variantId: variant.id,
-                  productName: product.name,
-                  unit: variant.unit,
-                  price: variant.price,
-                },
-              })
-            }
+            onPress={() => handleSubscribe(variant)}
             className="flex-1 bg-green-600 flex-row items-center justify-center px-4 py-3 rounded-xl shadow-sm"
           >
             <Ionicons name="calendar-outline" size={20} color="white" />
@@ -220,7 +233,6 @@ export default function ProductVariantScreen() {
           </Pressable>
         </View>
 
-        {/* Order Limits */}
         {(variant.min_order_qty > 1 || variant.max_order_qty) && (
           <View className="flex-row mt-2 pt-2 border-t border-gray-100">
             <Text className="text-xs text-gray-400">
@@ -253,7 +265,6 @@ export default function ProductVariantScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      {/* Custom Header */}
       <Stack.Screen
         options={{
           headerShown: true,
@@ -269,14 +280,11 @@ export default function ProductVariantScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
-        {/* Product Hero */}
         <View className="h-56 bg-gradient-to-br from-green-100 to-green-200 items-center justify-center">
           <Ionicons name="nutrition" size={80} color="#16a34a" />
         </View>
 
-        {/* Product Info */}
         <View className="px-4 pt-4 pb-2 bg-white border-b border-gray-100">
-          {/* Category badge */}
           <View className="bg-green-50 self-start px-3 py-1 rounded-full mb-2">
             <Text className="text-xs font-semibold text-green-700">
               {product.category?.name || "Uncategorized"}
@@ -293,7 +301,6 @@ export default function ProductVariantScreen() {
             </Text>
           )}
 
-          {/* Tax info */}
           {product.default_tax > 0 && (
             <Text className="text-xs text-gray-400 mt-2">
               Includes {product.default_tax}% GST
@@ -301,7 +308,6 @@ export default function ProductVariantScreen() {
           )}
         </View>
 
-        {/* Variants Section */}
         <View className="px-4 pt-4">
           <Text className="text-lg font-bold text-gray-900 mb-3">
             Choose a variant ({variants.length})

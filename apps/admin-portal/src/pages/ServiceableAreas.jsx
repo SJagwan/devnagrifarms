@@ -23,6 +23,7 @@ export default function ServiceableAreas() {
   const [form, setForm] = useState({
     name: "",
     coordinates: "",
+    is_active: true,
   });
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function ServiceableAreas() {
 
   const handleOpenCreate = () => {
     setEditingArea(null);
-    setForm({ name: "", coordinates: null });
+    setForm({ name: "", coordinates: null, is_active: true });
     setShowModal(true);
   };
 
@@ -72,6 +73,7 @@ export default function ServiceableAreas() {
     setForm({
       name: area.name,
       coordinates: area.coordinates || null,
+      is_active: area.is_active ?? true,
     });
     setShowModal(true);
   };
@@ -83,6 +85,7 @@ export default function ServiceableAreas() {
       const payload = {
         name: form.name.trim(),
         coordinates: form.coordinates,
+        is_active: form.is_active,
       };
 
       if (editingArea) {
@@ -92,7 +95,7 @@ export default function ServiceableAreas() {
       }
 
       setShowModal(false);
-      setForm({ name: "", coordinates: null });
+      setForm({ name: "", coordinates: null, is_active: true });
       setEditingArea(null);
       setQueryState((prev) => ({ ...prev, page: 1 }));
     } catch (e) {
@@ -127,6 +130,17 @@ export default function ServiceableAreas() {
       sortKey: "name",
       render: (row) => (
         <div className="text-sm font-medium text-gray-900">{row.name}</div>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (row) => (
+        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+          row.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+        }`}>
+          {row.is_active ? "Active" : "Inactive"}
+        </span>
       ),
     },
     {
@@ -203,13 +217,32 @@ export default function ServiceableAreas() {
         size="xl"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <TextField
-            label="Area Name"
-            value={form.name}
-            onChange={(e) => handleChange("name", e.target.value)}
-            placeholder="e.g., Downtown Dehradun, Rajpur Road Area"
-            required
-          />
+          <div className="flex justify-between items-end gap-4">
+            <div className="flex-1">
+              <TextField
+                label="Area Name"
+                value={form.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                placeholder="e.g., Downtown Dehradun, Rajpur Road Area"
+                required
+              />
+            </div>
+            <div className="pb-2">
+              <label className="flex items-center cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={form.is_active}
+                    onChange={(e) => handleChange("is_active", e.target.checked)}
+                  />
+                  <div className={`block w-10 h-6 rounded-full transition-colors ${form.is_active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${form.is_active ? 'translate-x-4' : ''}`}></div>
+                </div>
+                <span className="ml-3 text-sm font-medium text-gray-700">Active</span>
+              </label>
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Service Area Boundary *

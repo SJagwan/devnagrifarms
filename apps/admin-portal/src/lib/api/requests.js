@@ -8,6 +8,11 @@ export const authAPI = {
 };
 
 export const adminAPI = {
+  // Wallet & Finance
+  getWalletTransactions: (params = {}) => api.get("/admin/wallet/transactions", { params }),
+  getUserPassbook: (userId, params = {}) => api.get(`/admin/users/${userId}/wallet/passbook`, { params }),
+  manualWalletAdjustment: (userId, payload) => api.post(`/admin/users/${userId}/wallet/adjustment`, payload),
+
   // Categories
   getCategories: (params = {}) => api.get("/admin/categories", { params }),
   getCategory: (id) => api.get(`/admin/categories/${id}`),

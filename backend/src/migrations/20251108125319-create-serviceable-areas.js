@@ -18,6 +18,11 @@ module.exports = {
         allowNull: false,
         comment: "Polygon representing the serviceable area",
       },
+      is_active: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true,
+        allowNull: false,
+      },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,

@@ -10,16 +10,16 @@ const { sequelize } = require("../models");
  */
 const createAddFundsOrder = async (userId, amount) => {
   try {
-    // 1. Create order in Razorpay
+    const transactionRef = `wd_${crypto.randomUUID().replace(/-/g, '')}`;
+
     const options = {
       amount: Math.round(amount * 100), // Razorpay expects amount in paise
       currency: "INR",
-      receipt: `wallet_deposit_${userId}_${Date.now()}`,
+      receipt: transactionRef,
     };
 
     const razorpayOrder = await razorpay.orders.create(options);
 
-    // 2. Log payment intent in our DB
     const payment = await paymentRepository.createPayment({
       user_id: userId,
       amount: amount,
@@ -43,23 +43,60 @@ const createAddFundsOrder = async (userId, amount) => {
 };
 
 /**
- * Verify Razorpay Signature (Synchronous check for UI feedback)
+ * Verify Razorpay Signature and Sync Wallet (Synchronous check for UI feedback)
  */
-const verifySignature = (orderId, paymentId, signature) => {
+const verifySignature = async (orderId, paymentId, signature) => {
   const text = orderId + "|" + paymentId;
   const generated_signature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
     .update(text)
     .digest("hex");
 
-  return generated_signature === signature;
+  if (generated_signature !== signature) {
+    return false;
+  }
+
+  const transaction = await sequelize.transaction();
+  try {
+    const payment = await paymentRepository.findByGatewayOrderId(orderId);
+    
+    if (!payment) {
+      await transaction.rollback();
+      return true;
+    }
+
+    if (payment.status === "pending") {
+      await paymentRepository.updatePayment(payment.id, {
+        status: "success",
+        gateway_payment_id: paymentId,
+        method: "razorpay_sync"
+      }, transaction);
+
+      await walletService.addFunds(payment.user_id, payment.amount, {
+        referenceId: payment.id,
+        referenceType: "payment",
+        description: `Wallet top-up via Razorpay`,
+        metadata: {
+          gateway_payment_id: paymentId,
+          method: "razorpay_sync"
+        },
+        transaction
+      });
+    }
+
+    await transaction.commit();
+    return true;
+  } catch (error) {
+    await transaction.rollback();
+    console.error("Synchronous Payment Verification Error:", error);
+    return true; 
+  }
 };
 
 /**
  * Process Razorpay Webhook (The ultimate source of truth)
  */
 const handleRazorpayWebhook = async (payload, signature) => {
-  // 1. Verify Webhook Signature
   const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
     .update(JSON.stringify(payload))
@@ -76,21 +113,17 @@ const handleRazorpayWebhook = async (payload, signature) => {
   if (event === "payment.captured") {
     const transaction = await sequelize.transaction();
     try {
-      // 2. Find internal payment record
       const payment = await paymentRepository.findByGatewayOrderId(orderId);
       if (!payment) {
-        // This might be a direct payment not initiated by our app, or log it
         await transaction.rollback();
         return { status: "ignored", reason: "Order not found" };
       }
 
-      // 3. Idempotency Check: Don't process if already success
       if (payment.status === "success") {
         await transaction.rollback();
         return { status: "ignored", reason: "Already processed" };
       }
 
-      // 4. Update Payment Record
       await paymentRepository.updatePayment(payment.id, {
         status: "success",
         gateway_payment_id: paymentEntity.id,
@@ -98,11 +131,16 @@ const handleRazorpayWebhook = async (payload, signature) => {
         raw_response: payload
       }, transaction);
 
-      // 5. Credit Wallet via Ledger
       await walletService.addFunds(payment.user_id, payment.amount, {
         referenceId: payment.id,
         referenceType: "payment",
         description: `Wallet top-up via Razorpay (${paymentEntity.method})`,
+        metadata: {
+          gateway_payment_id: paymentEntity.id,
+          method: paymentEntity.method,
+          email: paymentEntity.email,
+          contact: paymentEntity.contact
+        },
         transaction
       });
 

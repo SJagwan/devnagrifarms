@@ -32,6 +32,7 @@ router.get("/users/:id", userController.getUserById);
 router.patch("/users/:id/status", userController.updateStatus);
 
 // Wallet management
+router.get("/wallet/transactions", walletController.adminGetAllTransactions);
 router.get("/users/:userId/wallet/passbook", walletController.adminGetUserPassbook);
 router.post("/users/:userId/wallet/adjustment", walletController.adminManualAdjustment);
 

@@ -1,7 +1,7 @@
 const productRepo = require("../repositories/product.repository");
 const variantRepo = require("../repositories/product-variant.repository");
 const storageService = require("./storage.service");
-const { ProductVariantImage } = require("../models");
+const { ProductVariantImage, Inventory } = require("../models");
 
 /**
  * Normalize image payload: accepts strings or objects with {key} or {url}.
@@ -22,6 +22,18 @@ function normalizeImages(images, maxImages = 3) {
     })
     .filter((v) => v.length > 0)
     .slice(0, maxImages);
+}
+
+/**
+ * Initialize inventory for a new variant
+ */
+async function initializeInventory(variantId) {
+  await Inventory.create({
+    product_variant_id: variantId,
+    warehouse: "warehouse_1",
+    quantity: 0,
+    reserved_quantity: 0,
+  });
 }
 
 /**
@@ -106,6 +118,9 @@ const createProduct = async (productData) => {
       variantData.product_id = createdProduct.id;
 
       const createdVariant = await variantRepo.createVariant(variantData);
+      
+      // Initialize zero stock for new variant
+      await initializeInventory(createdVariant.id);
 
       // Normalize and cap images to max 3; support strings or objects with { key }
       if (images && Array.isArray(images)) {
@@ -228,6 +243,10 @@ const addVariantToProduct = async (productId, data) => {
   const { images, ...variantData } = data;
   variantData.product_id = productId;
   const createdVariant = await variantRepo.createVariant(variantData);
+
+  // Initialize zero stock for new variant
+  await initializeInventory(createdVariant.id);
+
   // Normalize and cap images to max 3; support strings or objects with { key }
   if (images && Array.isArray(images)) {
     const normalized = normalizeImages(images, 3);

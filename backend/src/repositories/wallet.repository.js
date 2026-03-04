@@ -13,12 +13,39 @@ const createTransaction = async (data, transaction) => {
  */
 const getTransactionsPaged = async (userId, { page = 1, limit = 10 }) => {
   const offset = (page - 1) * limit;
-  
+
   const { rows, count } = await WalletTransaction.findAndCountAll({
     where: { user_id: userId },
     limit,
     offset,
     order: [["created_at", "DESC"]],
+  });
+
+  return { rows, count };
+};
+
+/**
+ * Get all system-wide wallet transactions with pagination
+ */
+const getAllTransactionsPaged = async ({ page = 1, limit = 10, type, userId }) => {
+  const offset = (page - 1) * limit;
+  const where = {};
+
+  if (type) where.type = type;
+  if (userId) where.user_id = userId;
+
+  const { rows, count } = await WalletTransaction.findAndCountAll({
+    where,
+    limit,
+    offset,
+    order: [["created_at", "DESC"]],
+    include: [
+      {
+        model: User,
+        as: "user",
+        attributes: ["id", "first_name", "last_name", "email", "phone"],
+      },
+    ],
   });
 
   return { rows, count };
@@ -50,6 +77,8 @@ const updateBalance = async (userId, newBalance, transaction) => {
 module.exports = {
   createTransaction,
   getTransactionsPaged,
+  getAllTransactionsPaged,
   getBalanceForUpdate,
   updateBalance,
 };
+

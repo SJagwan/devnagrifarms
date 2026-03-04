@@ -6,13 +6,16 @@ import {
   Pressable,
   SafeAreaView,
   ActivityIndicator,
-  Alert,
+  Modal,
   TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import RazorpayCheckout from "react-native-razorpay";
 import { useCart } from "@context/CartContext";
+import { useAuth } from "@context/AuthContext";
 import { customerAPI } from "@lib/api";
+import { walletApi } from "../../wallet/api/walletApi";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = [
@@ -41,6 +44,7 @@ function getAvailableDates(count = 7) {
 export default function CheckoutScreen() {
   const router = useRouter();
   const { cartItems, cartTotal, clearCart } = useCart();
+  const { user, refreshUser } = useAuth();
 
   const availableDates = getAvailableDates(7);
 
@@ -50,14 +54,23 @@ export default function CheckoutScreen() {
   const [deliveryDate, setDeliveryDate] = useState(availableDates[0].iso);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
-  const [placingOrder, setPlacingOrder] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("wallet");
 
-  // Serviceability
-  const [serviceability, setServiceability] = useState(null); // { serviceable, message }
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    type: "processing",
+    title: "",
+    message: "",
+    buttonText: "",
+    onAction: null,
+  });
+
+  const [serviceability, setServiceability] = useState(null);
   const [checkingServiceability, setCheckingServiceability] = useState(false);
 
   useEffect(() => {
     fetchAddresses();
+    refreshUser();
   }, []);
 
   const fetchAddresses = async () => {
@@ -73,7 +86,7 @@ export default function CheckoutScreen() {
       }
     } catch (e) {
       console.error("Failed to fetch addresses", e);
-      Alert.alert("Error", "Could not load addresses");
+      showError("Connection Error", "Could not load your saved addresses.");
     } finally {
       setLoading(false);
     }
@@ -97,12 +110,22 @@ export default function CheckoutScreen() {
       });
     } catch (e) {
       console.error("Serviceability check failed", e);
-      // Don't block checkout if serviceability check fails
       setServiceability({ serviceable: true, message: "Could not verify serviceability" });
     } finally {
       setCheckingServiceability(false);
     }
   }, []);
+
+  const showError = (title, message) => {
+    setModalConfig({
+      type: "error",
+      title,
+      message,
+      buttonText: "Okay",
+      onAction: () => setModalVisible(false),
+    });
+    setModalVisible(true);
+  };
 
   const handleSelectAddress = (addr) => {
     setSelectedAddressId(addr.id);
@@ -110,20 +133,28 @@ export default function CheckoutScreen() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedAddressId) {
-      Alert.alert("Required", "Please select a delivery address");
-      return;
-    }
-    if (serviceability && !serviceability.serviceable) {
-      Alert.alert("Not Serviceable", "Please select an address within our delivery area");
-      return;
-    }
-    if (cartItems.length === 0) {
-      Alert.alert("Empty Cart", "Your cart is empty");
+    if (!selectedAddressId) return showError("Required", "Please select a delivery address");
+    if (serviceability && !serviceability.serviceable) return showError("Not Serviceable", "Please select an address within our delivery area");
+    if (cartItems.length === 0) return showError("Empty Cart", "Your cart is empty");
+
+    if (paymentMethod === "wallet" && (user?.wallet_balance || 0) < cartTotal) {
+      setModalConfig({
+        type: "balance",
+        title: "Insufficient Balance",
+        message: `You need ₹${(cartTotal - (user?.wallet_balance || 0)).toFixed(2)} more to complete this order.`,
+        buttonText: "Top-up Wallet",
+        onAction: () => {
+          setModalVisible(false);
+          router.push("/wallet/add-funds");
+        },
+      });
+      setModalVisible(true);
       return;
     }
 
-    setPlacingOrder(true);
+    setModalConfig({ type: "processing", title: "Placing Order", message: "Hang tight, we're confirming your produce..." });
+    setModalVisible(true);
+
     try {
       const payload = {
         items: cartItems.map((item) => ({
@@ -133,34 +164,68 @@ export default function CheckoutScreen() {
         shippingAddressId: selectedAddressId,
         deliverySlot,
         deliveryDate,
+        paymentMethod,
         ...(notes.trim() ? { notes: notes.trim() } : {}),
       };
 
-      const res = await customerAPI.createOrder(payload);
-      const order = res.data.data;
+      if (paymentMethod === "wallet") {
+        const res = await customerAPI.createOrder(payload);
+        await finishOrder(res.data.data);
+      } else {
+        const orderRes = await walletApi.createAddFundsOrder(cartTotal);
+        const { gatewayOrderId, amount: rzpAmount, currency, keyId } = orderRes.data;
 
-      await clearCart();
+        const options = {
+          description: "Order Payment",
+          currency: currency,
+          key: keyId,
+          amount: rzpAmount.toString(),
+          name: "Devnagri Farms",
+          order_id: gatewayOrderId,
+          prefill: {
+            email: user?.email,
+            contact: user?.phone,
+            name: user?.first_name + " " + user?.last_name,
+          },
+          theme: { color: "#16a34a" },
+        };
 
-      const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
-      const addressLine = selectedAddr
-        ? `${selectedAddr.address_line_1}, ${selectedAddr.city}`
-        : "";
-
-      router.replace({
-        pathname: "/checkout/success",
-        params: {
-          orderId: order?.id || "",
-          deliveryDate,
-          addressLine,
-        },
-      });
+        RazorpayCheckout.open(options)
+          .then(async (data) => {
+            await walletApi.verifyPayment({
+              razorpay_order_id: data.razorpay_order_id,
+              razorpay_payment_id: data.razorpay_payment_id,
+              razorpay_signature: data.razorpay_signature,
+            });
+            const res = await customerAPI.createOrder({ ...payload, paymentMethod: 'wallet' });
+            await finishOrder(res.data.data);
+          })
+          .catch(() => {
+            setModalVisible(false);
+            showError("Payment Failed", "Could not complete online payment.");
+          });
+      }
     } catch (e) {
-      console.error("Place order failed", e);
+      setModalVisible(false);
       const msg = e.response?.data?.message || "Failed to place order";
-      Alert.alert("Order Failed", msg);
-    } finally {
-      setPlacingOrder(false);
+      showError("Order Failed", msg);
     }
+  };
+
+  const finishOrder = async (order) => {
+    await clearCart();
+    setModalVisible(false);
+    const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
+    const addressLine = selectedAddr ? `${selectedAddr.address_line_1}, ${selectedAddr.city}` : "";
+
+    router.replace({
+      pathname: "/checkout/success",
+      params: {
+        orderId: order?.id || "",
+        deliveryDate,
+        addressLine,
+      },
+    });
   };
 
   const canPlaceOrder =
@@ -179,7 +244,43 @@ export default function CheckoutScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      {/* Header */}
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <View className="flex-1 bg-black/60 items-center justify-center px-6">
+          <View className="bg-white w-full rounded-[32px] p-8 items-center shadow-2xl">
+            {modalConfig.type === "processing" ? (
+              <ActivityIndicator size="large" color="#16a34a" className="mb-6" />
+            ) : (
+              <View className={`w-16 h-16 rounded-full items-center justify-center mb-6 ${modalConfig.type === 'error' ? 'bg-red-50' : 'bg-green-50'}`}>
+                <Ionicons 
+                  name={modalConfig.type === 'error' ? 'alert-circle' : 'wallet'} 
+                  size={32} 
+                  color={modalConfig.type === 'error' ? '#dc2626' : '#16a34a'} 
+                />
+              </View>
+            )}
+            
+            <Text className="text-xl font-bold text-gray-900 text-center mb-2">{modalConfig.title}</Text>
+            <Text className="text-gray-500 text-center leading-5 mb-8">{modalConfig.message}</Text>
+
+            {modalConfig.type !== "processing" && (
+              <View className="flex-row gap-3 w-full">
+                <Pressable 
+                  onPress={modalConfig.onAction}
+                  className={`flex-1 py-4 rounded-2xl items-center ${modalConfig.type === 'error' ? 'bg-gray-100' : 'bg-green-600'}`}
+                >
+                  <Text className={`font-bold ${modalConfig.type === 'error' ? 'text-gray-900' : 'text-white'}`}>{modalConfig.buttonText}</Text>
+                </Pressable>
+                {modalConfig.type === 'balance' && (
+                  <Pressable onPress={() => setModalVisible(false)} className="flex-1 py-4 border border-gray-200 rounded-2xl items-center">
+                    <Text className="text-gray-500 font-bold">Cancel</Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
       <View className="bg-white px-4 py-4 flex-row items-center shadow-sm">
         <Pressable onPress={() => router.back()} className="mr-4">
           <Ionicons name="arrow-back" size={24} color="black" />
@@ -187,18 +288,12 @@ export default function CheckoutScreen() {
         <Text className="text-lg font-bold text-gray-900">Checkout</Text>
       </View>
 
-      <ScrollView className="flex-1 px-4 py-4">
-        {/* Address Section */}
-        <Text className="text-lg font-bold text-gray-900 mb-3">
-          Delivery Address
-        </Text>
+      <ScrollView className="flex-1 px-4 py-4" showsVerticalScrollIndicator={false}>
+        <Text className="text-lg font-bold text-gray-900 mb-3">Delivery Address</Text>
         {addresses.length === 0 ? (
           <View className="bg-white p-6 rounded-xl items-center mb-6">
             <Text className="text-gray-500 mb-4">No addresses found</Text>
-            <Pressable
-              className="bg-green-600 px-6 py-3 rounded-lg"
-              onPress={() => router.push("/address/add")}
-            >
+            <Pressable className="bg-green-600 px-6 py-3 rounded-lg" onPress={() => router.push("/address/add")}>
               <Text className="text-white font-medium">Add New Address</Text>
             </Pressable>
           </View>
@@ -208,7 +303,7 @@ export default function CheckoutScreen() {
               <Pressable
                 key={addr.id}
                 onPress={() => handleSelectAddress(addr)}
-                className="p-4 rounded-xl mb-3 border"
+                className="p-4 rounded-2xl mb-3 border"
                 style={{
                   backgroundColor: selectedAddressId === addr.id ? "#f0fdf4" : "white",
                   borderColor: selectedAddressId === addr.id ? "#16a34a" : "#e5e7eb",
@@ -216,26 +311,17 @@ export default function CheckoutScreen() {
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
-                    <Text className="font-bold text-gray-900">
-                      {addr.address_type}
-                    </Text>
-                    <Text className="text-gray-600 mt-1">
-                      {addr.address_line_1}, {addr.city}
-                    </Text>
-                    <Text className="text-gray-500 text-xs mt-1">
-                      {addr.zip_code}
-                    </Text>
+                    <Text className="font-bold text-gray-900">{addr.address_type}</Text>
+                    <Text className="text-gray-600 mt-1">{addr.address_line_1}, {addr.city}</Text>
+                    <Text className="text-gray-500 text-xs mt-1">{addr.zip_code}</Text>
                   </View>
-                  {selectedAddressId === addr.id && (
-                    <Ionicons name="checkmark-circle" size={24} color="#16a34a" />
-                  )}
+                  {selectedAddressId === addr.id && <Ionicons name="checkmark-circle" size={24} color="#16a34a" />}
                 </View>
               </Pressable>
             ))}
           </View>
         )}
 
-        {/* Serviceability Status */}
         {selectedAddressId && (
           <View className="mb-6">
             {checkingServiceability ? (
@@ -245,174 +331,128 @@ export default function CheckoutScreen() {
               </View>
             ) : serviceability ? (
               <View className="flex-row items-center">
-                <Ionicons
-                  name={serviceability.serviceable ? "checkmark-circle" : "alert-circle"}
-                  size={18}
-                  color={serviceability.serviceable ? "#16a34a" : "#EF4444"}
-                />
-                <Text
-                  className="ml-2 text-sm font-medium"
-                  style={{ color: serviceability.serviceable ? "#16a34a" : "#ef4444" }}
-                >
-                  {serviceability.message}
-                </Text>
+                <Ionicons name={serviceability.serviceable ? "checkmark-circle" : "alert-circle"} size={18} color={serviceability.serviceable ? "#16a34a" : "#EF4444"} />
+                <Text className="ml-2 text-sm font-medium" style={{ color: serviceability.serviceable ? "#16a34a" : "#ef4444" }}>{serviceability.message}</Text>
               </View>
             ) : null}
           </View>
         )}
 
-        {/* Delivery Date */}
-        <Text className="text-lg font-bold text-gray-900 mb-3">
-          Delivery Date
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="mb-6"
-        >
+        <Text className="text-lg font-bold text-gray-900 mb-3">Delivery Date</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
           {availableDates.map((d) => (
             <Pressable
               key={d.iso}
               onPress={() => setDeliveryDate(d.iso)}
-              className="mr-3 px-4 py-3 rounded-xl border items-center min-w-[70px]"
+              className="mr-3 px-4 py-3 rounded-2xl border items-center min-w-[70px]"
               style={{
                 backgroundColor: deliveryDate === d.iso ? "#16a34a" : "white",
                 borderColor: deliveryDate === d.iso ? "#16a34a" : "#e5e7eb",
               }}
             >
-              <Text
-                className="text-xs font-medium"
-                style={{ color: deliveryDate === d.iso ? "#dcfce7" : "#9ca3af" }}
-              >
-                {d.label || d.day}
-              </Text>
-              <Text
-                className="text-xl font-bold"
-                style={{ color: deliveryDate === d.iso ? "white" : "#111827" }}
-              >
-                {d.dateNum}
-              </Text>
-              <Text
-                className="text-xs"
-                style={{ color: deliveryDate === d.iso ? "#dcfce7" : "#6b7280" }}
-              >
-                {d.month}
-              </Text>
+              <Text className="text-xs font-medium" style={{ color: deliveryDate === d.iso ? "#dcfce7" : "#9ca3af" }}>{d.label || d.day}</Text>
+              <Text className="text-xl font-bold" style={{ color: deliveryDate === d.iso ? "white" : "#111827" }}>{d.dateNum}</Text>
+              <Text className="text-xs" style={{ color: deliveryDate === d.iso ? "#dcfce7" : "#6b7280" }}>{d.month}</Text>
             </Pressable>
           ))}
         </ScrollView>
 
-        {/* Delivery Slot */}
-        <Text className="text-lg font-bold text-gray-900 mb-3">
-          Delivery Slot
-        </Text>
+        <Text className="text-lg font-bold text-gray-900 mb-3">Delivery Slot</Text>
         <View className="flex-row mb-6">
           <Pressable
             onPress={() => setDeliverySlot("morning")}
-            className="flex-1 p-4 rounded-xl mr-2 border items-center"
+            className="flex-1 p-4 rounded-2xl mr-2 border items-center"
             style={{
               backgroundColor: deliverySlot === "morning" ? "#16a34a" : "white",
               borderColor: deliverySlot === "morning" ? "#16a34a" : "#e5e7eb",
             }}
           >
-            <Ionicons
-              name="sunny"
-              size={24}
-              color={deliverySlot === "morning" ? "white" : "gray"}
-            />
-            <Text
-              className="mt-2 font-bold"
-              style={{ color: deliverySlot === "morning" ? "white" : "#4b5563" }}
-            >
-              Morning
-            </Text>
-            <Text
-              className="text-xs"
-              style={{ color: deliverySlot === "morning" ? "#dcfce7" : "#9ca3af" }}
-            >
-              6 AM - 9 AM
-            </Text>
+            <Ionicons name="sunny" size={24} color={deliverySlot === "morning" ? "white" : "gray"} />
+            <Text className="mt-2 font-bold" style={{ color: deliverySlot === "morning" ? "white" : "#4b5563" }}>Morning</Text>
+            <Text className="text-xs" style={{ color: deliverySlot === "morning" ? "#dcfce7" : "#9ca3af" }}>6 AM - 9 AM</Text>
           </Pressable>
-
           <Pressable
             onPress={() => setDeliverySlot("evening")}
-            className="flex-1 p-4 rounded-xl ml-2 border items-center"
+            className="flex-1 p-4 rounded-2xl ml-2 border items-center"
             style={{
               backgroundColor: deliverySlot === "evening" ? "#16a34a" : "white",
               borderColor: deliverySlot === "evening" ? "#16a34a" : "#e5e7eb",
             }}
           >
-            <Ionicons
-              name="moon"
-              size={24}
-              color={deliverySlot === "evening" ? "white" : "gray"}
-            />
-            <Text
-              className="mt-2 font-bold"
-              style={{ color: deliverySlot === "evening" ? "white" : "#4b5563" }}
-            >
-              Evening
-            </Text>
-            <Text
-              className="text-xs"
-              style={{ color: deliverySlot === "evening" ? "#dcfce7" : "#9ca3af" }}
-            >
-              5 PM - 8 PM
-            </Text>
+            <Ionicons name="moon" size={24} color={deliverySlot === "evening" ? "white" : "gray"} />
+            <Text className="mt-2 font-bold" style={{ color: deliverySlot === "evening" ? "white" : "#4b5563" }}>Evening</Text>
+            <Text className="text-xs" style={{ color: deliverySlot === "evening" ? "#dcfce7" : "#9ca3af" }}>5 PM - 8 PM</Text>
           </Pressable>
         </View>
 
-        {/* Delivery Notes */}
-        <Text className="text-lg font-bold text-gray-900 mb-3">
-          Delivery Instructions
-        </Text>
-        <TextInput
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="E.g., Leave at the door, ring the bell..."
-          placeholderTextColor="#9CA3AF"
-          multiline
-          numberOfLines={3}
-          className="bg-white border border-gray-200 rounded-xl p-4 mb-6 text-gray-900"
-          style={{ textAlignVertical: "top", minHeight: 80 }}
-        />
+        <Text className="text-lg font-bold text-gray-900 mb-3">Payment Method</Text>
+        <View className="mb-2">
+          <Pressable
+            onPress={() => setPaymentMethod("wallet")}
+            className="bg-white p-4 rounded-2xl mb-3 border flex-row items-center justify-between"
+            style={{ 
+              borderColor: paymentMethod === "wallet" ? "#16a34a" : "#e5e7eb",
+              backgroundColor: paymentMethod === "wallet" ? "#f0fdf4" : "white"
+            }}
+          >
+            <View className="flex-row items-center">
+              <View className={`w-10 h-10 rounded-full items-center justify-center ${paymentMethod === "wallet" ? 'bg-green-100' : 'bg-gray-100'}`}>
+                <Ionicons name="wallet" size={20} color={paymentMethod === "wallet" ? "#16a34a" : "#6b7280"} />
+              </View>
+              <View className="ml-3">
+                <Text className="font-bold text-gray-900">Pay via Wallet</Text>
+                <Text className={`text-xs ${user?.wallet_balance < cartTotal ? 'text-red-500 font-medium' : 'text-gray-500'}`}>
+                  Balance: ₹{parseFloat(user?.wallet_balance || 0).toFixed(2)}
+                </Text>
+              </View>
+            </View>
+            {paymentMethod === "wallet" && <Ionicons name="checkmark-circle" size={24} color="#16a34a" />}
+          </Pressable>
 
-        {/* Payment Method */}
-        <Text className="text-lg font-bold text-gray-900 mb-3">
-          Payment Method
-        </Text>
-        <View className="bg-white p-4 rounded-xl mb-6 border border-gray-200">
-          <View className="flex-row items-center">
-            <Ionicons name="cash-outline" size={24} color="#16a34a" />
-            <Text className="ml-3 font-bold text-gray-900">
-              Cash on Delivery (COD)
-            </Text>
-            <Ionicons
-              name="checkmark-circle"
-              size={24}
-              color="#16a34a"
-              style={{ marginLeft: "auto" }}
-            />
-          </View>
+          <Pressable
+            onPress={() => setPaymentMethod("online")}
+            className="bg-white p-4 rounded-2xl border flex-row items-center justify-between"
+            style={{ 
+              borderColor: paymentMethod === "online" ? "#16a34a" : "#e5e7eb",
+              backgroundColor: paymentMethod === "online" ? "#f0fdf4" : "white"
+            }}
+          >
+            <View className="flex-row items-center">
+              <View className={`w-10 h-10 rounded-full items-center justify-center ${paymentMethod === "online" ? 'bg-green-100' : 'bg-gray-100'}`}>
+                <Ionicons name="card" size={20} color={paymentMethod === "online" ? "#16a34a" : "#6b7280"} />
+              </View>
+              <View className="ml-3">
+                <Text className="font-bold text-gray-900">Online Payment (Instant)</Text>
+                <Text className="text-gray-500 text-xs">UPI, Cards, Netbanking</Text>
+              </View>
+            </View>
+            {paymentMethod === "online" && <Ionicons name="checkmark-circle" size={24} color="#16a34a" />}
+          </Pressable>
         </View>
 
-        {/* Order Summary */}
-        <Text className="text-lg font-bold text-gray-900 mb-3">Summary</Text>
-        <View className="bg-white p-4 rounded-xl mb-8 border border-gray-200">
-          {/* Item breakdown */}
-          {cartItems.map((item) => (
-            <View key={item.variant.id} className="flex-row justify-between mb-2">
-              <Text className="text-gray-600 flex-1" numberOfLines={1}>
-                {item.variant.product?.name || "Item"} × {item.quantity}
-              </Text>
-              <Text className="font-medium text-gray-900 ml-2">
-                ₹{(item.variant.price * item.quantity).toFixed(2)}
+        {paymentMethod === "online" && (
+          <View className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex-row mb-6 items-start">
+            <Ionicons name="information-circle" size={20} color="#1e40af" />
+            <View className="ml-3 flex-1">
+              <Text className="text-blue-900 font-bold text-sm mb-1">Seamless Checkout</Text>
+              <Text className="text-blue-800 text-xs leading-4">
+                This will top up your wallet and automatically place the order. One-click tracking in your passbook!
               </Text>
             </View>
+          </View>
+        )}
+        
+        {paymentMethod === "wallet" && (user?.wallet_balance || 0) >= cartTotal && <View className="h-6" />}
+
+        <Text className="text-lg font-bold text-gray-900 mb-3">Summary</Text>
+        <View className="bg-white p-4 rounded-2xl mb-8 border border-gray-200">
+          {cartItems.map((item) => (
+            <View key={item.variant.id} className="flex-row justify-between mb-2">
+              <Text className="text-gray-600 flex-1" numberOfLines={1}>{item.variant.product?.name || "Item"} × {item.quantity}</Text>
+              <Text className="font-medium text-gray-900 ml-2">₹{(item.variant.price * item.quantity).toFixed(2)}</Text>
+            </View>
           ))}
-
           <View className="h-px bg-gray-100 my-2" />
-
           <View className="flex-row justify-between mb-2">
             <Text className="text-gray-500">Item Total</Text>
             <Text className="font-medium text-gray-900">₹{cartTotal.toFixed(2)}</Text>
@@ -424,26 +464,19 @@ export default function CheckoutScreen() {
           <View className="h-px bg-gray-100 my-2" />
           <View className="flex-row justify-between">
             <Text className="font-bold text-lg text-gray-900">To Pay</Text>
-            <Text className="font-bold text-lg text-green-600">
-              ₹{cartTotal.toFixed(2)}
-            </Text>
+            <Text className="font-bold text-lg text-green-600">₹{cartTotal.toFixed(2)}</Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* Footer Button */}
       <View className="p-4 bg-white border-t border-gray-100">
         <Pressable
           onPress={handlePlaceOrder}
-          disabled={placingOrder || !canPlaceOrder}
-          className="py-4 rounded-xl items-center"
-          style={{ backgroundColor: placingOrder || !canPlaceOrder ? "#9ca3af" : "#16a34a" }}
+          disabled={!canPlaceOrder}
+          className="py-4 rounded-2xl items-center"
+          style={{ backgroundColor: !canPlaceOrder ? "#e5e7eb" : "#16a34a" }}
         >
-          {placingOrder ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="text-white font-bold text-xl">Place Order</Text>
-          )}
+          <Text className={`font-bold text-xl ${!canPlaceOrder ? 'text-gray-400' : 'text-white'}`}>Place Order</Text>
         </Pressable>
       </View>
     </SafeAreaView>

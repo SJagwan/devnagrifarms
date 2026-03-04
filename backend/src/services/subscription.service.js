@@ -2,7 +2,11 @@ const { sequelize } = require("../models");
 const subscriptionRepository = require("../repositories/subscription.repository");
 const addressRepository = require("../repositories/address.repository");
 const productVariantRepository = require("../repositories/product-variant.repository");
+const orderRepository = require("../repositories/order.repository");
+const walletService = require("./wallet.service");
+const orderService = require("./order.service");
 const AppError = require("../utils/AppError");
+const { SUBSCRIPTION_MIN_BALANCE } = require("../constants/wallet.constants");
 
 const createSubscription = async (userId, data) => {
   const transaction = await sequelize.transaction();
@@ -11,12 +15,19 @@ const createSubscription = async (userId, data) => {
     const {
       shippingAddressId,
       items,
-      scheduleType, // 'daily', 'alternate', 'weekly'
+      scheduleType,
       startDate,
       deliverySlot,
     } = data;
 
-    // 1. Validate Address
+    const user = await walletService.getBalanceForUpdate(userId, transaction);
+    if (parseFloat(user.wallet_balance) < SUBSCRIPTION_MIN_BALANCE) {
+      throw new AppError(
+        `A minimum wallet balance of ₹${SUBSCRIPTION_MIN_BALANCE} is required to start a subscription.`,
+        400
+      );
+    }
+
     const address = await addressRepository.getAddressById(
       shippingAddressId,
       userId,
@@ -25,7 +36,6 @@ const createSubscription = async (userId, data) => {
       throw new AppError("Shipping address not found", 400);
     }
 
-    // 2. Process Items
     const subscriptionItemsData = [];
     let subscriptionName = "";
 
@@ -37,11 +47,11 @@ const createSubscription = async (userId, data) => {
       if (!variant.is_active)
         throw new AppError(`Product unavailable: ${variant.sku}`, 400);
 
-      // Construct name (e.g. "Milk Standard - 500ml")
+      // Example: "Milk Standard - 500ml"
       if (!subscriptionName) {
         subscriptionName = `${variant.product?.name || "Product"} (${quantity} ${variant.unit})`;
       } else {
-        subscriptionName += " + others"; // If we support multi-item later
+        subscriptionName += " + others";
       }
 
       const price = parseFloat(variant.price);
@@ -75,7 +85,6 @@ const createSubscription = async (userId, data) => {
       });
     }
 
-    // 3. Create Subscription Record
     const subscriptionData = {
       user_id: userId,
       shipping_address_id: shippingAddressId,
@@ -123,7 +132,8 @@ const pauseSubscription = async (
   if (pausedUntil) {
     const pauseDate = new Date(pausedUntil);
     const now = new Date();
-    // Validate cutoff (e.g. > 12 hours) - implementing simple check for future date
+    
+    // Future date validation for vacation mode
     if (pauseDate <= now) {
       throw new AppError("Pause date must be in the future", 400);
     }
@@ -170,13 +180,10 @@ const skipDelivery = async (userId, subscriptionId, date) => {
   );
   if (!subscription) throw new AppError("Subscription not found", 404);
 
-  // Validate Date Cutoff (12 hours)
-  // Assumes date string is YYYY-MM-DD.
-  const targetDate = new Date(date); // UTC Midnight
+  // Assumption: date string is in YYYY-MM-DD format.
+  const targetDate = new Date(date);
 
-  // Adjust target time based on slot to allow more accurate cutoff
-  // Morning (approx 7 AM IST -> 01:30 UTC): Add 2 hours to be safe/approx
-  // Evening (approx 6 PM IST -> 12:30 UTC): Add 11 hours
+  // Adjust target time based on delivery slot to calculate a roughly accurate 12-hour cutoff
   if (subscription.delivery_slot === "evening") {
     targetDate.setHours(11);
   } else {
@@ -210,8 +217,6 @@ const unskipDelivery = async (userId, subscriptionId, date) => {
   );
   if (!subscription) throw new AppError("Subscription not found", 404);
 
-  // Validate Date Cutoff (12 hours) - restoring also needs notice or maybe not?
-  // Let's enforce 12h for consistency so logistics can handle it.
   const targetDate = new Date(date);
 
   if (subscription.delivery_slot === "evening") {
@@ -282,9 +287,155 @@ const adminUpdateStatus = async (id, status) => {
   if (!subscription) {
     throw new AppError("Subscription not found", 404);
   }
-  // No user check for admin
+  
+  // Note: Admins can update status for any user, so user_id check is skipped.
   await subscriptionRepository.updateSubscriptionStatus(id, null, status);
   return { id, status };
+};
+
+const processDailySubscriptions = async () => {
+  console.log("[CRON] Starting Daily Subscription Processing Engine");
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const dayOfWeek = new Date().getDay();
+
+  const activeSubs =
+    await subscriptionRepository.getActiveSubscriptionsForProcessing();
+  let processedCount = 0;
+  let skippedCount = 0;
+  let failedCount = 0;
+
+  for (const sub of activeSubs) {
+    try {
+      // Auto-expire subscriptions past their end date
+      if (sub.end_date && todayStr > sub.end_date) {
+        await subscriptionRepository.updateSubscriptionStatus(
+          sub.id,
+          null,
+          "cancelled",
+        );
+        console.log(
+          `[CRON] Auto-expired Sub ${sub.id} (end_date: ${sub.end_date})`,
+        );
+        continue;
+      }
+
+      // Check vacation mode / paused status
+      if (sub.paused_until) {
+        if (todayStr <= sub.paused_until) {
+          skippedCount++;
+          continue;
+        }
+        
+        await subscriptionRepository.updateSubscriptionStatus(
+          sub.id,
+          null,
+          "active",
+        );
+        console.log(`[CRON] Auto-resumed Sub ${sub.id} (vacation ended)`);
+      }
+
+      const startDate = new Date(sub.start_date).toISOString().split("T")[0];
+      if (todayStr < startDate) {
+        continue;
+      }
+
+      let shouldRunToday = false;
+      if (sub.schedule_type === "daily" || sub.schedule_type === "d") {
+        shouldRunToday = true;
+      } else if (
+        sub.schedule_type === "alternate" ||
+        sub.schedule_type === "a"
+      ) {
+        const daysDiff = Math.floor(
+          (new Date(todayStr) - new Date(startDate)) / (1000 * 60 * 60 * 24),
+        );
+        shouldRunToday = daysDiff % 2 === 0;
+      } else if (sub.schedule_type === "weekly" || sub.schedule_type === "w") {
+        shouldRunToday = new Date(startDate).getDay() === dayOfWeek;
+      }
+
+      if (!shouldRunToday) continue;
+
+      const skipDates = sub.skip_dates || [];
+      if (skipDates.includes(todayStr)) {
+        skippedCount++;
+        continue;
+      }
+
+      const itemsForOrder = sub.items.map((item) => ({
+        variantId: item.product_variant_id,
+        quantity: item.quantity,
+      }));
+
+      // Wraps order creation and wallet deduction in a single transaction
+      const transaction = await sequelize.transaction();
+      try {
+        // Idempotency Guard (Inside Transaction): Skip if order already exists for this subscription/date
+        const existingOrder = await orderRepository.findSubscriptionOrderByDate(
+          sub.id,
+          todayStr,
+          { transaction, lock: transaction.LOCK.UPDATE }
+        );
+        if (existingOrder) {
+          console.log(
+            `[CRON] Skipping Sub ${sub.id} — already processed for ${todayStr}`,
+          );
+          await transaction.rollback();
+          skippedCount++;
+          continue;
+        }
+
+        const order = await orderService.createSubscriptionOrder(
+          sub.user_id,
+          sub.id,
+          {
+            items: itemsForOrder,
+            shippingAddressId: sub.shipping_address_id,
+            deliveryDate: todayStr,
+            deliverySlot: sub.delivery_slot,
+          },
+          transaction,
+        );
+
+        await walletService.deductFunds(
+          sub.user_id,
+          parseFloat(order.total_price),
+          {
+            referenceId: sub.id,
+            referenceType: "subscription",
+            metadata: { order_id: order.id },
+            description: `Subscription order for ${todayStr}`,
+            transaction,
+          },
+        );
+
+        await transaction.commit();
+        processedCount++;
+        console.log(`[CRON] Processed Sub ${sub.id} for User ${sub.user_id}`);
+      } catch (innerErr) {
+        await transaction.rollback();
+        
+        // Handle Race Condition (Idempotency) via database unique constraint
+        if (innerErr.name === 'SequelizeUniqueConstraintError') {
+           console.log(`[CRON] Order already exists (caught race condition) for Sub ${sub.id}`);
+           skippedCount++;
+        } else {
+           failedCount++;
+           console.error(`[CRON] Failed Sub ${sub.id}: ${innerErr.message}`);
+        }
+      }
+    } catch (err) {
+      console.error(`[CRON] Error processing sub ${sub.id}:`, err);
+      failedCount++;
+    }
+  }
+
+  return {
+    processed: processedCount,
+    skipped: skippedCount,
+    failed: failedCount,
+  };
 };
 
 module.exports = {
@@ -299,4 +450,5 @@ module.exports = {
   adminUpdateStatus,
   skipDelivery,
   unskipDelivery,
+  processDailySubscriptions,
 };

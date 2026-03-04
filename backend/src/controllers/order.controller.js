@@ -18,6 +18,7 @@ const createOrder = asyncHandler(async (req, res) => {
     deliverySlot: Joi.string().valid("morning", "evening").required(),
     deliveryDate: Joi.date().iso().min("now").required(),
     notes: Joi.string().allow("", null),
+    paymentMethod: Joi.string().valid("wallet", "online").required(),
   });
 
   const { error, value } = schema.validate(req.body);
@@ -25,6 +26,8 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new AppError(error.details[0].message, 400);
   }
 
+  // Both 'wallet' and 'online' payment methods are processed as prepaid 
+  // wallet deductions by the OrderService.
   const order = await orderService.placeOrder(req.user.id, value);
 
   res.status(201).json({

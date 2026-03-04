@@ -46,7 +46,7 @@ export function CartProvider({ children }) {
 
     setCartItems((prevItems) => {
       const existingItem = prevItems.find(
-        (item) => item.variant.id === variant.id
+        (item) => item.variant.id === variant.id,
       );
 
       if (existingItem) {
@@ -56,7 +56,7 @@ export function CartProvider({ children }) {
         return prevItems.map((item) =>
           item.variant.id === variant.id
             ? { ...item, quantity: clampedQty }
-            : item
+            : item,
         );
       } else {
         return [...prevItems, { variant, quantity: effectiveQty }];
@@ -66,7 +66,7 @@ export function CartProvider({ children }) {
 
   const removeFromCart = (variantId) => {
     setCartItems((prevItems) =>
-      prevItems.filter((item) => item.variant.id !== variantId)
+      prevItems.filter((item) => item.variant.id !== variantId),
     );
   };
 
@@ -84,7 +84,7 @@ export function CartProvider({ children }) {
 
       const clampedQty = maxQty ? Math.min(newQuantity, maxQty) : newQuantity;
       return prevItems.map((i) =>
-        i.variant.id === variantId ? { ...i, quantity: clampedQty } : i
+        i.variant.id === variantId ? { ...i, quantity: clampedQty } : i,
       );
     });
   };
@@ -96,7 +96,7 @@ export function CartProvider({ children }) {
 
   const cartTotal = cartItems.reduce(
     (total, item) => total + item.variant.price * item.quantity,
-    0
+    0,
   );
 
   const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
