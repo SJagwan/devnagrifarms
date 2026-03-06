@@ -1,0 +1,51 @@
+name: Deploy Backend to Production (Free Tier EC2)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy backend files to EC2 via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_EC2_HOST_IP }}
+          username: ubuntu
+          key: ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}
+          source: "backend/*,backend/.*"
+          target: "/home/ubuntu/app/prod"
+
+      - name: SSH into EC2 and restart Docker Containers
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_EC2_HOST_IP }}
+          username: ubuntu
+          key: ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu/app/prod/backend
+            
+            # Create the .env file dynamically from GitHub Secrets
+            echo "NODE_ENV=production" > .env
+            echo "PORT=8080" >> .env
+            echo "DB_HOST=${{ secrets.PROD_DB_HOST }}" >> .env
+            echo "DB_USER=${{ secrets.PROD_DB_USER }}" >> .env
+            echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> .env
+            echo "JWT_SECRET=${{ secrets.PROD_JWT_SECRET }}" >> .env
+            echo "RAZORPAY_KEY_ID=${{ secrets.PROD_RAZORPAY_KEY_ID }}" >> .env
+            echo "RAZORPAY_KEY_SECRET=${{ secrets.PROD_RAZORPAY_KEY_SECRET }}" >> .env
+            
+            # Rebuild and restart the container
+            docker compose down
+            docker compose up -d --build
+            
+            # Clean up dangling images to save disk space on the small EC2 instance
+            docker image prune -f

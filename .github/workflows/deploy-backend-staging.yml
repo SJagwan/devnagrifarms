@@ -1,0 +1,51 @@
+name: Deploy Backend to Staging (Free Tier EC2)
+
+on:
+  push:
+    branches: [ staging ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy backend files to EC2 via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STAGING_EC2_HOST_IP }}
+          username: ubuntu
+          key: ${{ secrets.STAGING_EC2_SSH_PRIVATE_KEY }}
+          source: "backend/*,backend/.*"
+          target: "/home/ubuntu/app/staging"
+
+      - name: SSH into EC2 and restart Docker Containers
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_EC2_HOST_IP }}
+          username: ubuntu
+          key: ${{ secrets.STAGING_EC2_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu/app/staging/backend
+            
+            # Create the .env file dynamically from GitHub Secrets
+            echo "NODE_ENV=staging" > .env
+            echo "PORT=8080" >> .env
+            echo "DB_HOST=${{ secrets.STAGING_DB_HOST }}" >> .env
+            echo "DB_USER=${{ secrets.STAGING_DB_USER }}" >> .env
+            echo "DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}" >> .env
+            echo "JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}" >> .env
+            echo "RAZORPAY_KEY_ID=${{ secrets.STAGING_RAZORPAY_KEY_ID }}" >> .env
+            echo "RAZORPAY_KEY_SECRET=${{ secrets.STAGING_RAZORPAY_KEY_SECRET }}" >> .env
+            
+            # Rebuild and restart the container
+            docker compose down
+            docker compose up -d --build
+            
+            # Clean up dangling images to save disk space on the small EC2 instance
+            docker image prune -f
