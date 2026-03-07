@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
+import { useRouter } from "expo-router";
 import ProductCard from "../../product-variant/components/ProductCard";
 
 export default function FeaturedProducts({
@@ -8,6 +9,7 @@ export default function FeaturedProducts({
   onAddToCart,
   onRemoveFromCart,
 }) {
+  const router = useRouter();
   // Helper to find quantity in cart
   const getQuantity = (id) => {
     if (Array.isArray(cartItems)) {
@@ -32,6 +34,12 @@ export default function FeaturedProducts({
             quantity={getQuantity(product.id)}
             onAdd={() => onAddToCart(product)}
             onRemove={() => onRemoveFromCart(product.id)}
+            onPress={() => {
+              router.push({
+                pathname: "/products/[id]",
+                params: { id: product.product_id },
+              });
+            }}
           />
         ))}
       </View>

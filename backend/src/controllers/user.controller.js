@@ -28,7 +28,8 @@ const updateStatus = asyncHandler(async (req, res) => {
 });
 
 const updateProfile = asyncHandler(async (req, res) => {
-  const result = await userService.updateUserProfile(req.user.id, req.body);
+  const targetUserId = (req.user.userType === "admin" && req.params.id) ? req.params.id : req.user.id;
+  const result = await userService.updateUserProfile(targetUserId, req.body);
   res.json({
     success: true,
     data: result,

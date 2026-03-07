@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Alert } from "react-native";
+import { View, Text, ScrollView, Pressable, Alert, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, Stack } from "expo-router";
 import { useAuth } from "@context/AuthContext";
@@ -106,8 +106,16 @@ export default function AccountScreen() {
               className="p-6"
             >
               <View className="flex-row items-center">
-                <View className="w-20 h-20 rounded-2xl bg-white/20 items-center justify-center border border-white/30 backdrop-blur-md">
-                  <Ionicons name="person" size={40} color="white" />
+                <View className="w-20 h-20 rounded-2xl bg-white/20 items-center justify-center border border-white/30 backdrop-blur-md overflow-hidden">
+                  {user?.avatar_url ? (
+                    <Image 
+                      source={{ uri: user.avatar_url }} 
+                      className="w-full h-full" 
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Ionicons name="person" size={40} color="white" />
+                  )}
                 </View>
                 <View className="ml-5 flex-1">
                   <Text className="text-2xl font-black text-white tracking-tight">

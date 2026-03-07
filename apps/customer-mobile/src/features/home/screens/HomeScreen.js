@@ -45,16 +45,16 @@ export default function HomeScreen() {
         // Find default variant or first variant representing the product
         const defaultVariant =
           p.variants?.find((v) => v.is_default) || p.variants?.[0] || {};
-        const image = p.images?.[0]?.url || "https://via.placeholder.com/400";
+        const image = p.image_url || defaultVariant.images?.[0]?.url || "https://via.placeholder.com/400";
 
         // Attach product details to the variant so CartContext has full context
         const fullVariant = {
           ...defaultVariant,
           product: { name: p.name },
-          images: p.images && p.images.length > 0 ? p.images : [{ url: image }],
+          images: defaultVariant.images && defaultVariant.images.length > 0 ? defaultVariant.images : [{ url: image }],
           product_id: p.id,
-          quantity: defaultVariant.weight_value,
-          unit: defaultVariant.weight_unit,
+          quantity: defaultVariant.quantity,
+          unit: defaultVariant.unit,
         };
 
         // If the ProductCard expects flat properties on variant/product:

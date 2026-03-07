@@ -68,8 +68,15 @@ export default function ProductsScreen() {
       }}
     >
       {/* Product Image */}
-      <View className="h-32 bg-gradient-to-br from-green-50 to-green-100 items-center justify-center">
-        <Ionicons name="cube-outline" size={48} color="#16a34a" />
+      <View className="h-32 bg-gray-50">
+        <Image
+          source={{ 
+            uri: item.image_url || item.variants?.[0]?.images?.[0]?.url || "https://via.placeholder.com/400" 
+          }}
+          className="w-full h-full"
+          resizeMode="cover"
+        />
+        <View className="absolute inset-0 bg-black/5" />
       </View>
 
       {/* Product Info */}

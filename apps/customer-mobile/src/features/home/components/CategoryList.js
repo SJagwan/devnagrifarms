@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function CategoryList({
@@ -23,8 +23,18 @@ export default function CategoryList({
             style={{ opacity: 0.9 }}
             onPress={() => onCategoryPress?.(cat.id)}
           >
-            <View className="w-18 h-18 bg-white rounded-2xl items-center justify-center border border-gray-100 mb-2 shadow-sm p-4">
-              <Ionicons name={cat.icon} size={32} color="#2E7D32" />
+            <View className="w-20 h-20 bg-white rounded-2xl items-center justify-center border border-gray-100 mb-2 shadow-sm overflow-hidden">
+              {cat.image_url ? (
+                <Image
+                  source={{ uri: cat.image_url }}
+                  className="w-full h-full"
+                  resizeMode="cover"
+                />
+              ) : (
+                <View className="p-4 items-center justify-center">
+                  <Ionicons name={cat.icon || "leaf"} size={32} color="#2E7D32" />
+                </View>
+              )}
             </View>
             <Text className="text-xs text-gray-600 font-semibold tracking-wide">
               {cat.name}

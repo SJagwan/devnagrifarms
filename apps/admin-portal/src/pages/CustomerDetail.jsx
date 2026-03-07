@@ -197,6 +197,22 @@ const RecentOrders = ({ orders, userId }) => (
 
 const ContactInfo = ({ user, isBlocked, onToggleStatus, blocking }) => (
   <div className="bg-white shadow rounded-lg p-6">
+    <div className="flex flex-col items-center mb-6 pb-6 border-b border-gray-100">
+      <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-md">
+        {user.avatar_url ? (
+          <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
+            <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
+          </div>
+        )}
+      </div>
+      <h3 className="mt-4 text-xl font-bold text-gray-900">{user.first_name} {user.last_name}</h3>
+      <p className="text-sm text-gray-500">{user.email || "No email provided"}</p>
+    </div>
+    
     <h3 className="text-lg font-medium text-gray-900 mb-6">Contact Information</h3>
     <div className="space-y-4">
       <div>
@@ -232,8 +248,15 @@ const ContactInfo = ({ user, isBlocked, onToggleStatus, blocking }) => (
     <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col gap-3">
         <Button 
           variant="outline" 
+          onClick={() => onToggleStatus("edit")}
+          className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+        >
+          Edit Profile
+        </Button>
+        <Button 
+          variant="outline" 
           className={`w-full ${isBlocked ? "text-green-600 border-green-200 hover:bg-green-50" : "text-red-600 border-red-200 hover:bg-red-50"}`} 
-          onClick={onToggleStatus}
+          onClick={() => onToggleStatus("status")}
           loading={blocking}
         >
           {isBlocked ? "Activate User" : "Block User"}
@@ -285,6 +308,11 @@ export default function CustomerDetail() {
   const [adjAmount, setAdjAmount] = useState("");
   const [adjDescription, setAdjDescription] = useState("");
   const [adjLoading, setAdjLoading] = useState(false);
+
+  // Edit Profile State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editData, setEditData] = useState({ first_name: "", last_name: "", avatar_url: "" });
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -367,6 +395,24 @@ export default function CustomerDetail() {
     }
   };
 
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    if (!editData.first_name) return toast.error("First name is required");
+
+    setEditLoading(true);
+    try {
+      await adminAPI.updateUserProfile(id, editData);
+      toast.success("Profile updated successfully");
+      setShowEditModal(false);
+      setUser((prev) => ({ ...prev, ...editData }));
+    } catch (err) {
+      console.error("Failed to update profile", err);
+      toast.error(err.response?.data?.message || "Failed to update profile");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -418,11 +464,21 @@ export default function CustomerDetail() {
 
         {/* Right Column - Profile Card */}
         <div className="space-y-6">
-          <ContactInfo 
-            user={user} 
-            isBlocked={isBlocked} 
+          <ContactInfo
+            user={user}
+            isBlocked={isBlocked}
             blocking={blocking}
-            onToggleStatus={() => setShowConfirm(true)} 
+            onToggleStatus={(type) => {
+              if (type === "status") setShowConfirm(true);
+              if (type === "edit") {
+                setEditData({
+                  first_name: user.first_name,
+                  last_name: user.last_name,
+                  avatar_url: user.avatar_url || "",
+                });
+                setShowEditModal(true);
+              }
+            }}
           />
           <SubscriptionsList subscriptions={user.subscriptions} />
         </div>
@@ -434,7 +490,7 @@ export default function CustomerDetail() {
         onConfirm={handleToggleStatus}
         title={isBlocked ? "Activate Customer?" : "Block Customer?"}
         message={
-          isBlocked 
+          isBlocked
             ? `Are you sure you want to activate ${user.first_name}'s account? They will be able to log in and place orders again.`
             : `Are you sure you want to block ${user.first_name}'s account? They will be immediately logged out and prevented from accessing the platform.`
         }
@@ -455,7 +511,9 @@ export default function CustomerDetail() {
               type="button"
               onClick={() => setAdjType("add")}
               className={`flex-1 py-2 border rounded-md font-medium text-sm transition-colors ${
-                adjType === "add" ? "bg-green-50 border-green-500 text-green-700" : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                adjType === "add"
+                  ? "bg-green-50 border-green-500 text-green-700"
+                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
               }`}
             >
               Add Funds
@@ -464,7 +522,9 @@ export default function CustomerDetail() {
               type="button"
               onClick={() => setAdjType("deduct")}
               className={`flex-1 py-2 border rounded-md font-medium text-sm transition-colors ${
-                adjType === "deduct" ? "bg-red-50 border-red-500 text-red-700" : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                adjType === "deduct"
+                  ? "bg-red-50 border-red-500 text-red-700"
+                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
               }`}
             >
               Deduct Funds
@@ -503,12 +563,65 @@ export default function CustomerDetail() {
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               loading={adjLoading}
-              className={adjType === "add" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}
+              className={
+                adjType === "add"
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+              }
             >
               {adjType === "add" ? "Add Funds" : "Deduct Funds"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => !editLoading && setShowEditModal(false)}
+        title="Edit Customer Profile"
+        size="md"
+      >
+        <form onSubmit={handleUpdateProfile} className="space-y-4">
+          <TextField
+            label="First Name"
+            value={editData.first_name}
+            onChange={(e) =>
+              setEditData((prev) => ({ ...prev, first_name: e.target.value }))
+            }
+            placeholder="First Name"
+            required
+          />
+          <TextField
+            label="Last Name"
+            value={editData.last_name}
+            onChange={(e) =>
+              setEditData((prev) => ({ ...prev, last_name: e.target.value }))
+            }
+            placeholder="Last Name"
+          />
+          <TextField
+            label="Avatar URL"
+            value={editData.avatar_url}
+            onChange={(e) =>
+              setEditData((prev) => ({ ...prev, avatar_url: e.target.value }))
+            }
+            placeholder="https://example.com/photo.jpg"
+          />
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowEditModal(false)}
+              disabled={editLoading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" loading={editLoading}>
+              Save Changes
             </Button>
           </div>
         </form>

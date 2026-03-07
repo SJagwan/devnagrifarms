@@ -34,10 +34,11 @@ function RootLayoutNav() {
       <Stack.Screen name="auth" />
       <Stack.Screen name="location" />
       <Stack.Screen name="account" />
-      <Stack.Screen name="product" />
       <Stack.Screen name="cart" />
       <Stack.Screen name="checkout" />
-      <Stack.Screen name="subscription" />
+      <Stack.Screen name="subscriptions" />
+      <Stack.Screen name="orders" />
+      <Stack.Screen name="wallet" />
     </Stack>
   );
 }

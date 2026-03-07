@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { View, Text, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable } from "react-native";
+import { View, Text, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, Stack } from "expo-router";
 import { useAuth } from "@context/AuthContext";
@@ -97,8 +97,16 @@ export default function ProfileScreen() {
               onPress={() => Alert.alert("Coming Soon", "Image picker will be integrated soon!")}
               className="relative"
             >
-              <View className="w-24 h-24 rounded-3xl bg-green-50 items-center justify-center border-2 border-green-100 shadow-sm">
-                <Ionicons name="person" size={48} color="#16a34a" />
+              <View className="w-24 h-24 rounded-3xl bg-green-50 items-center justify-center border-2 border-green-100 shadow-sm overflow-hidden">
+                {user?.avatar_url ? (
+                  <Image 
+                    source={{ uri: user.avatar_url }} 
+                    className="w-full h-full" 
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Ionicons name="person" size={48} color="#16a34a" />
+                )}
               </View>
               <View className="absolute -bottom-2 -right-2 bg-white w-10 h-10 rounded-full items-center justify-center shadow-md border border-gray-100">
                 <Ionicons name="camera" size={20} color="#16a34a" />
