@@ -216,9 +216,9 @@ export default function ServiceableAreas() {
         title={editingArea ? "Edit Serviceable Area" : "Add Serviceable Area"}
         size="xl"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex justify-between items-end gap-4">
-            <div className="flex-1">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+            <div className="md:col-span-3">
               <TextField
                 label="Area Name"
                 value={form.name}
@@ -227,7 +227,7 @@ export default function ServiceableAreas() {
                 required
               />
             </div>
-            <div className="pb-2">
+            <div className="pt-8">
               <label className="flex items-center cursor-pointer">
                 <div className="relative">
                   <input
