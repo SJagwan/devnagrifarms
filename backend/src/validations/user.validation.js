@@ -5,6 +5,7 @@ const updateProfile = {
     first_name: Joi.string().trim().min(1).max(50),
     last_name: Joi.string().trim().allow("").max(50),
     email: Joi.string().email().allow("", null),
+    avatar_url: Joi.string().uri().allow("", null),
   }),
 };
 

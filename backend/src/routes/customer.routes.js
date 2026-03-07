@@ -29,9 +29,13 @@ const walletController = require("../controllers/wallet.controller");
 const paymentController = require("../controllers/payment.controller");
 const userController = require("../controllers/user.controller");
 const authController = require("../controllers/auth.controller");
+const storageController = require("../controllers/storage.controller");
 
 router.get("/profile", authController.getCurrentUser);
 router.put("/profile", validate(userValidation.updateProfile), userController.updateProfile);
+
+// Storage
+router.post("/storage/upload-url", storageController.getPresignedUploadUrl);
 
 // Wallet
 router.get("/wallet/passbook", walletController.getMyPassbook);

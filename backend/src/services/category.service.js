@@ -8,12 +8,12 @@ const getCategoryById = async (id) => {
   return await categoryRepo.getCategoryById(id);
 };
 
-const createCategory = async (name, description) => {
-  return await categoryRepo.createCategory({ name, description });
+const createCategory = async (name, description, image_url) => {
+  return await categoryRepo.createCategory({ name, description, image_url });
 };
 
-const updateCategory = async (id, name, description) => {
-  return await categoryRepo.updateCategory(id, { name, description });
+const updateCategory = async (id, name, description, image_url) => {
+  return await categoryRepo.updateCategory(id, { name, description, image_url });
 };
 
 const deleteCategory = async (id) => {

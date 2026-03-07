@@ -58,6 +58,7 @@ const updateUserProfile = async (id, data) => {
   const updateData = {
     first_name: data.first_name !== undefined ? data.first_name : user.first_name,
     last_name: data.last_name !== undefined ? data.last_name : user.last_name,
+    avatar_url: data.avatar_url !== undefined ? data.avatar_url : user.avatar_url,
   };
 
   // If email is provided and it's different from the current email
@@ -86,7 +87,8 @@ const updateUserProfile = async (id, data) => {
     email_verified: updateData.email !== undefined
       ? false // email was changed, so unverified
       : !!user.email_verified_at, // email untouched, return actual status
-    phone: user.phone
+    phone: user.phone,
+    avatar_url: updateData.avatar_url,
   };
 };
 

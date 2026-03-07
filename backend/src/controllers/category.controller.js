@@ -54,13 +54,13 @@ const getCategoryById = async (req, res) => {
 
 const createCategory = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, image_url } = req.body;
     if (!name) {
       return res
         .status(400)
         .json({ success: false, message: "Category name is required" });
     }
-    const category = await categoryService.createCategory(name, description);
+    const category = await categoryService.createCategory(name, description, image_url);
     return res.status(201).json({
       success: true,
       message: "Category created successfully",
@@ -81,11 +81,12 @@ const createCategory = async (req, res) => {
 
 const updateCategory = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, image_url } = req.body;
     const category = await categoryService.updateCategory(
       req.params.id,
       name,
-      description
+      description,
+      image_url
     );
     return res.json({
       success: true,

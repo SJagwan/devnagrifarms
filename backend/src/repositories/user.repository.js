@@ -127,6 +127,7 @@ const findUserForAuth = async (identifier, userType = null) => {
       "phone_verified_at",
       "user_type",
       "status",
+      "avatar_url",
     ],
     include: [{ model: AddressUser, as: "addresses" }],
   });
