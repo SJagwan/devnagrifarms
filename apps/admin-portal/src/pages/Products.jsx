@@ -22,6 +22,7 @@ export default function Products() {
     description: "",
     category_id: "",
     default_tax: "0",
+    image_url: "",
   });
   const navigate = useNavigate();
 
@@ -63,7 +64,7 @@ export default function Products() {
   const handleOpenCreate = () => {
     setEditingProduct(null);
     setOriginalFormData(null);
-    setForm({ name: "", description: "", category_id: "", default_tax: "0" });
+    setForm({ name: "", description: "", category_id: "", default_tax: "0", image_url: "" });
     setShowCreate(true);
   };
 
@@ -74,6 +75,7 @@ export default function Products() {
       description: product.description || "",
       category_id: product.category_id || product.category?.id || "",
       default_tax: String(product.default_tax ?? "0"),
+      image_url: product.image_url || "",
     };
     setForm(formData);
     setOriginalFormData(formData);
@@ -89,7 +91,7 @@ export default function Products() {
       } else {
         await adminAPI.createProduct(form);
       }
-      setForm({ name: "", description: "", category_id: "", default_tax: "0" });
+      setForm({ name: "", description: "", category_id: "", default_tax: "0", image_url: "" });
       setShowCreate(false);
       setEditingProduct(null);
       setOriginalFormData(null);
@@ -112,6 +114,17 @@ export default function Products() {
   };
 
   const columns = [
+    {
+      key: "image",
+      label: "Preview",
+      render: (row) => (
+        <img
+          src={row.image_url || "https://via.placeholder.com/150"}
+          alt={row.name}
+          className="w-12 h-12 object-cover rounded-lg border border-gray-200 shadow-xs"
+        />
+      ),
+    },
     {
       key: "name",
       label: "Name",
@@ -236,6 +249,12 @@ export default function Products() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
+          <TextField
+            label="Image URL"
+            value={form.image_url}
+            onChange={(e) => handleChange("image_url", e.target.value)}
+            placeholder="https://..."
+          />
           <TextField
             label="Tax % (GST)"
             type="number"

@@ -9,8 +9,12 @@ const { Op } = require("sequelize");
 const getAllProducts = async () => {
   return await Product.findAll({
     include: [
-      { model: Category, as: "category", attributes: ["id", "name"] },
-      { model: ProductVariant, as: "variants", attributes: ["id"] },
+      { model: Category, as: "category" },
+      {
+        model: ProductVariant,
+        as: "variants",
+        include: [{ model: ProductVariantImage, as: "images" }],
+      },
     ],
     order: [["name", "ASC"]],
   });
@@ -41,8 +45,12 @@ const getProductsPaged = async ({
   const { rows, count } = await Product.findAndCountAll({
     where,
     include: [
-      { model: Category, as: "category", attributes: ["id", "name"] },
-      { model: ProductVariant, as: "variants", attributes: ["id"] },
+      { model: Category, as: "category" },
+      {
+        model: ProductVariant,
+        as: "variants",
+        include: [{ model: ProductVariantImage, as: "images" }],
+      },
     ],
     limit,
     offset,
@@ -53,7 +61,14 @@ const getProductsPaged = async ({
 
 const getProductById = async (id) => {
   return await Product.findByPk(id, {
-    include: [{ model: Category, as: "category" }],
+    include: [
+      { model: Category, as: "category" },
+      {
+        model: ProductVariant,
+        as: "variants",
+        include: [{ model: ProductVariantImage, as: "images" }],
+      },
+    ],
   });
 };
 

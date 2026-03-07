@@ -1,4 +1,4 @@
-const { sequelize } = require("../models");
+const { sequelize, User } = require("../models");
 const orderRepository = require("../repositories/order.repository");
 const inventoryRepository = require("../repositories/inventory.repository");
 const addressRepository = require("../repositories/address.repository");
@@ -19,6 +19,12 @@ const _prepareOrderData = async (userId, shippingAddressId, items, transaction) 
     throw new AppError("Shipping address not found or invalid", 400);
   }
 
+  // Fetch the user's phone for the delivery snapshot
+  const user = await User.findByPk(userId, {
+    attributes: ["phone"],
+    transaction,
+  });
+
   const shippingAddressSnapshot = {
     address_line_1: address.address_line_1,
     address_line_2: address.address_line_2,
@@ -26,7 +32,7 @@ const _prepareOrderData = async (userId, shippingAddressId, items, transaction) 
     state: address.state,
     country: address.country,
     zip_code: address.zip_code,
-    phone: address.phone, // Documented assumption: phone might be stored in address or user profile
+    phone: user?.phone || null,
   };
 
   let subtotal = 0;

@@ -33,6 +33,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      image_url: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
       category_id: {
         type: DataTypes.UUID,
         allowNull: false,

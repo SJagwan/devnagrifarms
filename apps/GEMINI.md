@@ -13,39 +13,27 @@ A web-based dashboard for farm management, product cataloging, and order process
 *   **Routing:** React Router DOM v7
 *   **Maps:** Leaflet & React Leaflet (for Serviceable Areas)
 *   **State/Feedback:** React Hot Toast for notifications
-*   **HTTP Client:** Axios
-
-**Key Scripts:**
-*   `npm run dev`: Start development server (default port 5173)
-*   `npm run build`: Build for production
-*   `npm run lint`: Run ESLint
+*   **Status:** ✅ Production Ready UI for Orders, Customers, Subscriptions, and Finance.
 
 ### 2. Customer Mobile App (`./customer-mobile`)
 A mobile application for end-customers to browse produce, manage carts, and place orders.
 
 *   **Framework:** React Native 0.81 + Expo 54
-*   **Architecture:** New Architecture enabled (`newArchEnabled: true`)
 *   **Routing:** Expo Router v6 (File-based routing in `app/`)
 *   **Styling:** NativeWind v4 (Tailwind CSS for RN)
-*   **Animations:** React Native Reanimated
 *   **Storage:** Expo Secure Store
-*   **Scheme:** `devnagri://`
+*   **Status:** ✅ Feature-complete for Auth, Browsing, Orders, Addresses, and Wallet.
 
-**Key Scripts:**
-*   `npm start`: Start Expo Metro Bundler
-*   `npm run android`: Run on Android Emulator/Device
-*   `npm run ios`: Run on iOS Simulator/Device
+## 🛠 Shared Engineering Patterns
 
-## 🛠 Configuration & Integration
+### 1. Networking & Security
+- **HTTP Client:** Both apps use `axios` instances with central interceptors for JWT lifecycle management (Access + Refresh tokens).
+- **Environment:** Strict separation of environment variables via `.env` files (Vite/Expo prefixes).
 
-### Environment Variables
-Both apps rely on environment variables to connect to the backend API.
-*   **Admin:** Uses `.env` (Vite standards: `VITE_API_URL`).
-*   **Mobile:** Uses `.env.development` / `.env.production` (Expo standards: `EXPO_PUBLIC_API_URL`).
-
-### Shared Patterns
-*   **HTTP Client:** Both apps use `axios` instances configured with interceptors for JWT auth (handling access/refresh tokens).
-*   **Styling:** Both utilize Tailwind CSS syntax (v4 for Web, NativeWind for Mobile) to maintain design consistency.
+### 2. UI/UX Standards
+- **Consistency:** Both utilize Tailwind CSS syntax to maintain design language.
+- **Resilience:** All data-heavy views include loaders (`ActivityIndicator`/`Spinner`) and refresh mechanisms.
+- **Safety:** Destructive actions are always gated behind confirmation dialogs.
 
 ## 📂 Directory Map
 
@@ -57,14 +45,10 @@ apps/
 │   │   ├── context/     # AuthContext
 │   │   ├── lib/         # API clients & utilities
 │   │   └── pages/       # Route views
-│   └── vite.config.js
 │
 └── customer-mobile/
-    ├── app/             # Expo Router screens
-    │   ├── (tabs)/      # Bottom tab navigation
-    │   └── auth/        # Auth flow screens
+    ├── app/             # Expo Router route wrappers (Strictly minimal)
     ├── src/
-    │   ├── features/    # Feature-based logic
-    │   └── lib/         # API & utilities
-    └── app.json         # Expo Config
+    │   ├── features/    # Feature-based logic, UI, and state
+    │   └── lib/         # Shared API & position services
 ```

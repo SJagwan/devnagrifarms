@@ -5,6 +5,7 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { useState, useEffect } from "react";
@@ -83,7 +84,7 @@ export default function ProductVariantScreen() {
     }
 
     router.push({
-      pathname: "/subscription/setup",
+      pathname: "/subscriptions/setup",
       params: {
         variantId: variant.id,
         productName: product.name,
@@ -280,8 +281,15 @@ export default function ProductVariantScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
-        <View className="h-56 bg-gradient-to-br from-green-100 to-green-200 items-center justify-center">
-          <Ionicons name="nutrition" size={80} color="#16a34a" />
+        <View className="h-64 bg-gray-100 relative">
+          <Image
+            source={{ 
+              uri: product.image_url || variants[0]?.images?.[0]?.url || "https://via.placeholder.com/600" 
+            }}
+            className="w-full h-full"
+            resizeMode="cover"
+          />
+          <View className="absolute inset-0 bg-black/5" />
         </View>
 
         <View className="px-4 pt-4 pb-2 bg-white border-b border-gray-100">

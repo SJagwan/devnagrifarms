@@ -4,6 +4,7 @@ import api from "../apiClient";
 export const customerAPI = {
   // Profile
   getProfile: () => api.get("/customer/profile"),
+  updateProfile: (data) => api.put("/customer/profile", data),
 
   // Products
   getProducts: (params = {}) => api.get("/customer/products", { params }),
@@ -21,7 +22,11 @@ export const customerAPI = {
 
   // Addresses
   getAddresses: () => api.get("/customer/addresses"),
+  getAddressById: (id) => api.get(`/customer/addresses/${id}`),
   addAddress: (data) => api.post("/customer/addresses", data),
+  updateAddress: (id, data) => api.put(`/customer/addresses/${id}`, data),
+  deleteAddress: (id) => api.delete(`/customer/addresses/${id}`),
+  setDefaultAddress: (id) => api.patch(`/customer/addresses/${id}/default`),
 
   // Subscriptions
   createSubscription: (data) => api.post("/customer/subscriptions", data),

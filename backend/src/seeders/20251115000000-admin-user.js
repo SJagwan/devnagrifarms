@@ -27,6 +27,7 @@ module.exports = {
         password_hash: passwordHash,
         user_type: "admin",
         status: "active",
+        avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400",
         email_verified_at: new Date(),
         phone_verified_at: new Date(),
         created_at: new Date(),

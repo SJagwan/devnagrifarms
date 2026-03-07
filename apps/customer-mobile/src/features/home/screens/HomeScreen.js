@@ -1,198 +1,186 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
   ScrollView,
-  TextInput,
-  TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
+  RefreshControl,
+  Text,
+  Linking,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-
+import { useRouter } from "expo-router";
 import HomeHeader from "@features/home/components/HomeHeader";
-import ProductCard from "@features/product-variant/components/ProductCard";
+import PromoCarousel from "@features/home/components/PromoCarousel";
+import CategoryList from "@features/home/components/CategoryList";
+import FeaturedProducts from "@features/home/components/FeaturedProducts";
+import LocationSelectorSheet from "@features/home/components/LocationSelectorSheet";
 
-// Mock Data
-const CATEGORIES = [
-  { id: 1, name: "Vegetables", icon: "nutrition" },
-  { id: 2, name: "Fruits", icon: "leaf" },
-  { id: 3, name: "Dairy", icon: "water" },
-  { id: 4, name: "Herbs", icon: "flower" },
-  { id: 5, name: "Dry Fruits", icon: "nutrition" },
-];
-
-const PRODUCTS = [
-  {
-    id: 1,
-    name: "Fresh Organic Tomato",
-    weight: "500g",
-    price: 40,
-    originalPrice: 50,
-    discount: 20,
-    image:
-      "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: 2,
-    name: "Green Spinach (Palak)",
-    weight: "250g",
-    price: 30,
-    image:
-      "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: 3,
-    name: "Farm Fresh Carrot",
-    weight: "500g",
-    price: 45,
-    originalPrice: 60,
-    discount: 25,
-    image:
-      "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: 4,
-    name: "Cauliflower",
-    weight: "1 pc",
-    price: 35,
-    image:
-      "https://images.unsplash.com/photo-1568584711075-3d021a7c3d54?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: 5,
-    name: "Red Onion",
-    weight: "1 kg",
-    price: 60,
-    originalPrice: 80,
-    discount: 25,
-    image:
-      "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: 6,
-    name: "Potatoes",
-    weight: "1 kg",
-    price: 25,
-    image:
-      "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=400&q=80",
-  },
-];
+import { useCart } from "../../../context/CartContext";
+import { customerAPI } from "../../../lib/api";
 
 export default function HomeScreen() {
-  const [cartItems, setCartItems] = useState({});
+  const router = useRouter();
+  const { cartItems, addToCart, removeFromCart } = useCart();
 
-  const addToCart = (id) => {
-    setCartItems((prev) => ({
-      ...prev,
-      [id]: (prev[id] || 0) + 1,
-    }));
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [locationSheetVisible, setLocationSheetVisible] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      setError(null);
+      const [categoriesRes, productsRes] = await Promise.all([
+        customerAPI.getCategories(),
+        customerAPI.getProducts({ limit: 10 }), // Fetch some featured products
+      ]);
+
+      setCategories(categoriesRes.data.data || []);
+
+      // If needed, map product items to match ProductCard expectations if the backend changes
+      const fetchedProducts = productsRes.data.data || [];
+      const mappedProducts = fetchedProducts.map((p) => {
+        // Find default variant or first variant representing the product
+        const defaultVariant =
+          p.variants?.find((v) => v.is_default) || p.variants?.[0] || {};
+        const image = p.image_url || defaultVariant.images?.[0]?.url || "https://via.placeholder.com/400";
+
+        // Attach product details to the variant so CartContext has full context
+        const fullVariant = {
+          ...defaultVariant,
+          product: { name: p.name },
+          images: defaultVariant.images && defaultVariant.images.length > 0 ? defaultVariant.images : [{ url: image }],
+          product_id: p.id,
+          quantity: defaultVariant.quantity,
+          unit: defaultVariant.unit,
+        };
+
+        // If the ProductCard expects flat properties on variant/product:
+        return {
+          id: defaultVariant.id, // Important: Cart tracks by Variant ID
+          product_id: p.id,
+          name: p.name,
+          weight:
+            defaultVariant.weight_value + " " + defaultVariant.weight_unit,
+          price: defaultVariant.price,
+          originalPrice: defaultVariant.original_price || defaultVariant.price,
+          discount: 0, // Calculate discount if needed
+          image: image,
+          min_order_qty: defaultVariant.min_order_qty || 1,
+          max_order_qty: defaultVariant.max_order_qty,
+          variant: fullVariant, // Pass the entire variant to pass to the cart
+        };
+      });
+
+      setProducts(mappedProducts);
+    } catch (err) {
+      console.error("Error fetching home data:", err);
+      setError("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const removeFromCart = (id) => {
-    setCartItems((prev) => {
-      const newCount = (prev[id] || 0) - 1;
-      if (newCount <= 0) {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      }
-      return { ...prev, [id]: newCount };
-    });
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, []);
+
+  const handleAddToCart = (product) => {
+    // The cart expects the entire variant object, not the mapped flat product
+    if (product.variant) {
+      addToCart(product.variant, 1);
+    }
   };
 
-  const cartCount = Object.values(cartItems).reduce((a, b) => a + b, 0);
+  const handleRemoveFromCart = (productId) => {
+    // Assuming removeFromCart takes the variantId
+    removeFromCart(productId);
+  };
+
+  const handleCategoryPress = (categoryId) => {
+    // Navigate to products filtered by category
+    router.push({ pathname: "/products", params: { categoryId } });
+  };
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-white justify-center items-center">
+        <ActivityIndicator size="large" color="#16a34a" />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <HomeHeader cartCount={cartCount} />
+      <HomeHeader onLocationPress={() => setLocationSheetVisible(true)} />
 
       <ScrollView
         className="flex-1 bg-gray-50"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#16a34a"]}
+            tintColor="#16a34a"
+          />
+        }
       >
-        {/* Search Bar */}
-        <View className="px-4 py-4 bg-white sticky top-0 z-10 shadow-sm">
-          <View className="flex-row items-center bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">
-            <Ionicons name="search" size={22} color="#9CA3AF" />
-            <TextInput
-              placeholder="Search for fresh goodness..."
-              className="flex-1 ml-3 text-base text-gray-900 font-medium"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-        </View>
+        <View className="mt-4" />
+        <PromoCarousel
+          onBannerPress={(item) => {
+            if (item.link_type === "PRODUCT" && item.link_id) {
+              router.push({
+                pathname: "/products/[id]",
+                params: { id: item.link_id },
+              });
+            } else if (item.link_type === "CATEGORY" && item.link_id) {
+              router.push({
+                pathname: "/products",
+                params: { categoryId: item.link_id },
+              });
+            } else if (item.link_type === "EXTERNAL" && item.external_url) {
+              Linking.openURL(item.external_url);
+            } else {
+              router.push("/products");
+            }
+          }}
+        />
 
-        {/* Banner */}
-        <View className="px-4 mb-8 mt-2">
-          <View className="w-full h-40 rounded-3xl p-5 justify-between bg-green-100">
-            <View>
-              <View className="bg-white/30 self-start px-2 py-1 rounded-full mb-2">
-                <Text className="text-green-900 text-[10px] font-bold uppercase">
-                  New Arrival
-                </Text>
-              </View>
-              <Text className="text-green-900 font-extrabold text-2xl leading-7">
-                Fresh from Farm
-              </Text>
-              <Text className="text-green-800 text-sm mt-1 font-medium">
-                Get 20% off on your first order
-              </Text>
-            </View>
-            <TouchableOpacity className="bg-white self-start px-5 py-2.5 rounded-xl shadow-sm">
-              <Text className="text-green-800 font-bold text-xs">
-                ORDER NOW
-              </Text>
-            </TouchableOpacity>
+        {error && (
+          <View className="mx-4 mb-4 p-3 bg-red-50 rounded-lg">
+            <Text className="text-red-600 text-center text-sm">{error}</Text>
           </View>
-        </View>
+        )}
 
-        {/* Categories */}
-        <View className="px-4 mb-8">
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-xl font-extrabold text-gray-900">
-              Categories
-            </Text>
-            <TouchableOpacity>
-              <Text className="text-primary text-sm font-bold">See all</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                className="items-center mr-6"
-                style={{ opacity: 0.9 }}
-              >
-                <View className="w-18 h-18 bg-white rounded-2xl items-center justify-center border border-gray-100 mb-2 shadow-sm p-4">
-                  <Ionicons name={cat.icon} size={32} color="#2E7D32" />
-                </View>
-                <Text className="text-xs text-gray-600 font-semibold tracking-wide">
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        <CategoryList
+          categories={categories}
+          onCategoryPress={handleCategoryPress}
+          onSeeAllPress={() => console.log("See all categories")}
+        />
 
-        {/* Featured Products */}
-        <View className="px-4 pb-24">
-          <Text className="text-xl font-extrabold text-gray-900 mb-5">
-            Featured Products
-          </Text>
-          <View className="flex-row flex-wrap justify-between">
-            {PRODUCTS.map((product, index) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                index={index}
-                quantity={cartItems[product.id] || 0}
-                onAdd={() => addToCart(product.id)}
-                onRemove={() => removeFromCart(product.id)}
-              />
-            ))}
-          </View>
-        </View>
+        <FeaturedProducts
+          products={products}
+          cartItems={cartItems}
+          onAddToCart={handleAddToCart}
+          onRemoveFromCart={handleRemoveFromCart}
+        />
       </ScrollView>
+
+      {/* Location Selector Bottom Sheet */}
+      <LocationSelectorSheet 
+        isVisible={locationSheetVisible} 
+        onClose={() => setLocationSheetVisible(false)} 
+      />
     </View>
   );
 }

@@ -79,4 +79,20 @@ export const adminAPI = {
   getUsers: (params = {}) => api.get("/admin/users", { params }),
   getUser: (id) => api.get(`/admin/users/${id}`),
   updateUserStatus: (id, status) => api.patch(`/admin/users/${id}/status`, { status }),
+
+  // Banners
+  getBanners: (params = {}) => api.get("/admin/banners", { params }),
+  getBanner: (id) => api.get(`/admin/banners/${id}`),
+  createBanner: (payload) =>
+    api.post("/admin/banners", payload, {
+      meta: { successMessage: "Banner created" },
+    }),
+  updateBanner: (id, payload) =>
+    api.put(`/admin/banners/${id}`, payload, {
+      meta: { successMessage: "Banner updated" },
+    }),
+  deleteBanner: (id) =>
+    api.delete(`/admin/banners/${id}`, {
+      meta: { successMessage: "Banner deleted" },
+    }),
 };

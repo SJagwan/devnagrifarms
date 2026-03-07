@@ -17,6 +17,10 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true,
       },
+      image_url: {
+        type: Sequelize.STRING(255),
+        allowNull: true,
+      },
       category_id: {
         type: Sequelize.UUID,
         allowNull: false,

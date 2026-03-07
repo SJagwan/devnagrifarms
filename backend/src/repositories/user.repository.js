@@ -16,6 +16,12 @@ const findUserById = async (id, activeOnly = true) => {
         "updated_at",
       ],
     },
+    include: [{ 
+      model: AddressUser, 
+      as: "addresses",
+      where: { is_default: true },
+      required: false
+    }],
   });
 };
 
@@ -121,7 +127,16 @@ const findUserForAuth = async (identifier, userType = null) => {
       "phone_verified_at",
       "user_type",
       "status",
+      "avatar_url",
     ],
+    include: [{ model: AddressUser, as: "addresses" }],
+  });
+};
+
+const findUserByEmail = async (email) => {
+  return await User.findOne({
+    where: { email },
+    attributes: ["id", "email", "email_verified_at"],
   });
 };
 
@@ -143,6 +158,7 @@ module.exports = {
   getUserByIdFull,
   findUserByIdentifier,
   findUserForAuth,
+  findUserByEmail,
   createUser,
   updateUser,
 };

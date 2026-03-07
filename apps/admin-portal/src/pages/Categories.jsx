@@ -24,6 +24,7 @@ export default function Categories() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    image_url: "",
   });
   const [deleteConfirm, setDeleteConfirm] = useState({
     isOpen: false,
@@ -53,7 +54,7 @@ export default function Categories() {
       } else {
         await adminAPI.createCategory(formData);
       }
-      setFormData({ name: "", description: "" });
+      setFormData({ name: "", description: "", image_url: "" });
       setShowForm(false);
       setEditingId(null);
       loadCategories(lastQuery);
@@ -67,6 +68,7 @@ export default function Categories() {
     setFormData({
       name: category.name,
       description: category.description || "",
+      image_url: category.image_url || "",
     });
     setEditingId(category.id);
     setShowForm(true);
@@ -90,7 +92,7 @@ export default function Categories() {
   };
 
   const handleCancel = () => {
-    setFormData({ name: "", description: "" });
+    setFormData({ name: "", description: "", image_url: "" });
     setEditingId(null);
     setShowForm(false);
   };
@@ -109,6 +111,17 @@ export default function Categories() {
   };
 
   const columns = [
+    {
+      key: "image",
+      label: "Preview",
+      render: (row) => (
+        <img
+          src={row.image_url || "https://via.placeholder.com/150"}
+          alt={row.name}
+          className="w-12 h-12 object-cover rounded-lg border border-gray-200 shadow-xs"
+        />
+      ),
+    },
     {
       key: "name",
       label: "Name",
@@ -191,6 +204,12 @@ export default function Categories() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
+          <TextField
+            label="Image URL"
+            value={formData.image_url}
+            onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+            placeholder="https://..."
+          />
           <div className="flex gap-3 justify-end">
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel

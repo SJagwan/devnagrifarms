@@ -1,34 +1,10 @@
-const Joi = require("joi");
 const asyncHandler = require("../middlewares/asyncHandler");
 const orderService = require("../services/order.service");
-const AppError = require("../utils/AppError");
 
 const createOrder = asyncHandler(async (req, res) => {
-  const schema = Joi.object({
-    items: Joi.array()
-      .items(
-        Joi.object({
-          variantId: Joi.string().uuid().required(),
-          quantity: Joi.number().min(1).required(),
-        })
-      )
-      .min(1)
-      .required(),
-    shippingAddressId: Joi.string().uuid().required(),
-    deliverySlot: Joi.string().valid("morning", "evening").required(),
-    deliveryDate: Joi.date().iso().min("now").required(),
-    notes: Joi.string().allow("", null),
-    paymentMethod: Joi.string().valid("wallet", "online").required(),
-  });
-
-  const { error, value } = schema.validate(req.body);
-  if (error) {
-    throw new AppError(error.details[0].message, 400);
-  }
-
   // Both 'wallet' and 'online' payment methods are processed as prepaid 
   // wallet deductions by the OrderService.
-  const order = await orderService.placeOrder(req.user.id, value);
+  const order = await orderService.placeOrder(req.user.id, req.body);
 
   res.status(201).json({
     success: true,
@@ -58,18 +34,7 @@ const getMyOrderById = asyncHandler(async (req, res) => {
 });
 
 const updateStatus = asyncHandler(async (req, res) => {
-  const schema = Joi.object({
-    status: Joi.string()
-      .valid("pending", "confirmed", "shipped", "delivered", "cancelled")
-      .required(),
-  });
-
-  const { error, value } = schema.validate(req.body);
-  if (error) {
-    throw new AppError(error.details[0].message, 400);
-  }
-
-  const result = await orderService.updateOrderStatus(req.params.id, value.status);
+  const result = await orderService.updateOrderStatus(req.params.id, req.body.status);
 
   res.json({
     success: true,

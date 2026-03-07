@@ -312,7 +312,7 @@ export default function CheckoutScreen() {
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
                     <Text className="font-bold text-gray-900">{addr.address_type}</Text>
-                    <Text className="text-gray-600 mt-1">{addr.address_line_1}, {addr.city}</Text>
+                    <Text className="text-gray-600 mt-1">{addr.address_line_1}, {addr.city}, {addr.state}</Text>
                     <Text className="text-gray-500 text-xs mt-1">{addr.zip_code}</Text>
                   </View>
                   {selectedAddressId === addr.id && <Ionicons name="checkmark-circle" size={24} color="#16a34a" />}

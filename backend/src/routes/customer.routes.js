@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const { authenticate } = require("../middlewares/auth.middleware");
+const validate = require("../middlewares/validate");
+const userValidation = require("../validations/user.validation");
+const orderValidation = require("../validations/order.validation");
+const addressValidation = require("../validations/address.validation");
+const subscriptionValidation = require("../validations/subscription.validation");
 
 const isCustomer = (req, res, next) => {
   if (req.user.userType !== "customer") {
@@ -22,12 +27,15 @@ const addressController = require("../controllers/address.controller");
 const subscriptionController = require("../controllers/subscription.controller");
 const walletController = require("../controllers/wallet.controller");
 const paymentController = require("../controllers/payment.controller");
+const userController = require("../controllers/user.controller");
+const authController = require("../controllers/auth.controller");
+const storageController = require("../controllers/storage.controller");
 
-router.use(authenticate, isCustomer);
+router.get("/profile", authController.getCurrentUser);
+router.put("/profile", validate(userValidation.updateProfile), userController.updateProfile);
 
-router.get("/profile", (req, res) => {
-  res.json({ success: true, message: "Get customer profile" });
-});
+// Storage
+router.post("/storage/upload-url", storageController.getPresignedUploadUrl);
 
 // Wallet
 router.get("/wallet/passbook", walletController.getMyPassbook);
@@ -36,14 +44,19 @@ router.get("/wallet/passbook", walletController.getMyPassbook);
 router.post("/payments/create-order", paymentController.createAddFundsOrder);
 router.post("/payments/verify", paymentController.verifyPayment);
 
+
 // Addresses
 router.get("/addresses", addressController.getAddresses);
-router.post("/addresses", addressController.addAddress);
+router.get("/addresses/:id", validate(addressValidation.addressIdParam), addressController.getAddressById);
+router.post("/addresses", validate(addressValidation.addAddress), addressController.addAddress);
+router.put("/addresses/:id", validate(addressValidation.addressIdParam), validate(addressValidation.updateAddress), addressController.updateAddress);
+router.delete("/addresses/:id", validate(addressValidation.addressIdParam), addressController.deleteAddress);
+router.patch("/addresses/:id/default", validate(addressValidation.addressIdParam), addressController.setDefaultAddress);
 
 // Subscriptions
 router.get("/subscriptions", subscriptionController.getSubscriptions);
 router.get("/subscriptions/:id", subscriptionController.getSubscriptionById);
-router.post("/subscriptions", subscriptionController.createSubscription);
+router.post("/subscriptions", validate(subscriptionValidation.createSubscription), subscriptionController.createSubscription);
 router.post(
   "/subscriptions/:id/pause",
   subscriptionController.pauseSubscription,
@@ -70,7 +83,7 @@ router.get("/categories", categoryController.getAllCategories);
 // Orders
 router.get("/orders", orderController.getMyOrders);
 router.get("/orders/:id", orderController.getMyOrderById);
-router.post("/orders", orderController.createOrder);
+router.post("/orders", validate(orderValidation.createOrder), orderController.createOrder);
 
 // Serviceability
 router.post(

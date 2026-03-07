@@ -24,6 +24,9 @@ export default function PolygonMapEditor({ initialCoordinates, onChange }) {
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
+    // Ensure Leaflet is available for plugins if they expect a global L
+    window.L = L;
+
     // Initialize map centered on Dehradun, India
     const map = L.map(mapRef.current).setView([30.3165, 78.0322], 12);
     mapInstanceRef.current = map;
@@ -77,6 +80,11 @@ export default function PolygonMapEditor({ initialCoordinates, onChange }) {
       },
     });
     map.addControl(drawControl);
+
+    // Force a resize after a small delay to handle modal transition
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
 
     // Handle polygon creation
     map.on(L.Draw.Event.CREATED, (e) => {

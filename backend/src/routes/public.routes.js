@@ -1,8 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const paymentController = require("../controllers/payment.controller");
+const bannerController = require("../controllers/banner.controller");
 
 router.get("/ping", (req, res) => res.send("pong"));
+
+// Banners
+router.get("/banners", bannerController.getActiveBanners);
 
 // Webhooks
 router.post("/webhooks/razorpay", paymentController.handleRazorpayWebhook);

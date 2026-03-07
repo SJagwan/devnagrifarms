@@ -15,6 +15,7 @@ export default function ProductCard({
   product,
   onAdd,
   onRemove,
+  onPress,
   quantity = 0,
   index = 0,
 }) {
@@ -38,53 +39,54 @@ export default function ProductCard({
     <Animated.View
       entering={FadeIn.delay(index * 100).springify()}
       className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden w-[48%] mb-5"
-      style={[
-        {
-          shadowColor: "#000",
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
-          shadowOffset: { width: 0, height: 4 },
-        },
-      ]}
     >
-      <View className="h-36 bg-gray-50 relative">
-        <Image
-          source={{ uri: product.image }}
-          className="w-full h-full object-cover"
-          resizeMode="cover"
-        />
-        {product.discount > 0 && (
-          <View className="absolute top-2 left-2 bg-red-500 px-2.5 py-1 rounded-full shadow-sm">
-            <Text className="text-white text-[10px] font-bold tracking-wide">
-              {product.discount}% OFF
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View className="p-3.5">
-        <Text
-          className="text-gray-900 font-bold text-sm h-9 leading-4"
-          numberOfLines={2}
-        >
-          {product.name}
-        </Text>
-        <Text className="text-gray-500 text-xs mt-1 font-medium">
-          {product.weight}
-        </Text>
-
-        <View className="flex-row items-center mt-3 space-x-2">
-          <Text className="text-primary font-extrabold text-base">
-            ₹{product.price}
-          </Text>
-          {product.originalPrice && (
-            <Text className="text-gray-400 text-xs line-through font-medium">
-              ₹{product.originalPrice}
-            </Text>
+      <AnimatedPressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        style={animatedStyle}
+      >
+        <View className="h-36 bg-gray-50 relative">
+          <Image
+            source={{ uri: product.image }}
+            className="w-full h-full object-cover"
+            resizeMode="cover"
+          />
+          {product.discount > 0 && (
+            <View className="absolute top-2 left-2 bg-red-500 px-2.5 py-1 rounded-full shadow-sm">
+              <Text className="text-white text-[10px] font-bold tracking-wide">
+                {product.discount}% OFF
+              </Text>
+            </View>
           )}
         </View>
 
-        <View className="mt-3">
+        <View className="p-3.5">
+          <Text
+            className="text-gray-900 font-bold text-sm h-9 leading-4"
+            numberOfLines={2}
+          >
+            {product.name}
+          </Text>
+          <Text className="text-gray-500 text-xs mt-1 font-medium">
+            {product.weight}
+          </Text>
+
+          <View className="flex-row items-center mt-3 space-x-2">
+            <Text className="text-primary font-extrabold text-base">
+              ₹{product.price}
+            </Text>
+            {product.originalPrice && (
+              <Text className="text-gray-400 text-xs line-through font-medium">
+                ₹{product.originalPrice}
+              </Text>
+            )}
+          </View>
+        </View>
+      </AnimatedPressable>
+
+      <View className="px-3.5 pb-3.5">
+        <View className="">
           {quantity === 0 ? (
             <AnimatedPressable
               onPressIn={handlePressIn}
