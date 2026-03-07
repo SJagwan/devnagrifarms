@@ -83,7 +83,7 @@ export default function ProductVariantScreen() {
     }
 
     router.push({
-      pathname: "/subscription/setup",
+      pathname: "/subscriptions/setup",
       params: {
         variantId: variant.id,
         productName: product.name,
