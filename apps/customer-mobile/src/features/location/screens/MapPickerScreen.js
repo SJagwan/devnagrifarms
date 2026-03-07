@@ -9,6 +9,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import CenterPin from "../components/CenterPin";
 import AddressBottomSheet from "../components/AddressBottomSheet";
 import { customerAPI } from "@lib/api";
+import { geocodeService } from "@lib/services/geocode.service";
+import { locationService } from "@lib/services/location.service";
 
 export default function MapPickerScreen() {
   const mapRef = useRef(null);
@@ -23,27 +25,36 @@ export default function MapPickerScreen() {
   // Ask for permission and get current location on mount
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
+      const hasPermission = await locationService.requestPermissions();
+      if (!hasPermission) {
         Alert.alert("Permission Denied", "Location access is required.");
         router.back();
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      try {
+        const location = await locationService.getCurrentPosition(10000);
+        const region = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
 
-      const region = {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      };
-
-      setInitialRegion(region);
-      // Wait for map to settle before reverse geocoding
-      handleRegionChangeComplete(region);
+        setInitialRegion(region);
+        handleRegionChangeComplete(region);
+      } catch (err) {
+        console.error("MapPicker initial location failed", err);
+        // Fallback to a default region (e.g., Delhi) if GPS fails
+        const defaultRegion = {
+          latitude: 28.6139,
+          longitude: 77.2090,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,
+        };
+        setInitialRegion(defaultRegion);
+        handleRegionChangeComplete(defaultRegion);
+      }
     })();
   }, []);
 
@@ -52,54 +63,23 @@ export default function MapPickerScreen() {
       try {
         setLoading(true);
 
-        // 1. Reverse geocode to get address details
-        const geocode = await Location.reverseGeocodeAsync({
-          latitude: lat,
-          longitude: lng,
-        });
-
-        let addressString = "Unknown Location";
-        let city = "";
-        let state = "";
-        let detectedPincode = "";
-
-        if (geocode && geocode.length > 0) {
-          const place = geocode[0];
-          const parts = [];
-          if (place.subregion || place.district) parts.push(place.subregion || place.district);
-          if (place.city) parts.push(place.city);
-          
-          city = place.city || place.district || place.subregion || "";
-          state = place.region || "";
-
-          if (parts.length === 0 && state) parts.push(state);
-
-          addressString = parts.join(", ") || "Selected Location";
-          if (place.postalCode) {
-            detectedPincode = place.postalCode;
-          }
-        }
-
-        const newAddress = {
-          lat,
-          lng,
-          addressLine: addressString,
-          city,
-          state,
-          pincode: detectedPincode,
-          source: "gps",
-        };
+        // 1. Reverse geocode using standardized service
+        const parsedAddress = await geocodeService.reverseGeocode(lat, lng);
         
-        setAddress(newAddress);
+        if (parsedAddress) {
+          setAddress({ ...parsedAddress, source: "gps" });
 
-        // 2. Check serviceability against the backend
-        const { data } = await customerAPI.checkServiceability({
-          lat,
-          lng,
-          pincode: detectedPincode,
-        });
+          // 2. Check serviceability
+          const { data } = await customerAPI.checkServiceability({
+            lat,
+            lng,
+            pincode: parsedAddress.pincode,
+          });
 
-        setIsServiceable(!!data?.data?.serviceable);
+          setIsServiceable(!!data?.data?.serviceable);
+        } else {
+          setIsServiceable(false);
+        }
       } catch (error) {
         console.log("Error verifying location:", error);
         setIsServiceable(false);
@@ -108,6 +88,11 @@ export default function MapPickerScreen() {
       }
     }, 800)
   ).current;
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => debouncedLocationCheck.cancel();
+  }, []);
 
   const handleRegionChangeComplete = (newRegion) => {
     // Only check if we're not heavily zoomed out

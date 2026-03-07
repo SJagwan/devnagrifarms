@@ -1,6 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const { authenticate } = require("../middlewares/auth.middleware");
+const validate = require("../middlewares/validate");
+const userValidation = require("../validations/user.validation");
+const orderValidation = require("../validations/order.validation");
+const subscriptionValidation = require("../validations/subscription.validation");
 const categoryController = require("../controllers/category.controller");
 const productController = require("../controllers/product.controller");
 const serviceableAreaController = require("../controllers/serviceable-area.controller");
@@ -29,7 +33,7 @@ router.get("/dashboard/stats", (req, res) => {
 // User management
 router.get("/users", userController.getUsers);
 router.get("/users/:id", userController.getUserById);
-router.patch("/users/:id/status", userController.updateStatus);
+router.patch("/users/:id/status", validate(userValidation.updateStatus), userController.updateStatus);
 
 // Wallet management
 router.get("/wallet/transactions", walletController.adminGetAllTransactions);
@@ -39,12 +43,12 @@ router.post("/users/:userId/wallet/adjustment", walletController.adminManualAdju
 // Order management
 router.get("/orders", orderController.getOrders);
 router.get("/orders/:id", orderController.getOrderById);
-router.patch("/orders/:id/status", orderController.updateStatus);
+router.patch("/orders/:id/status", validate(orderValidation.updateStatus), orderController.updateStatus);
 
 // Subscription management
 router.get("/subscriptions", subscriptionController.adminGetSubscriptions);
 router.get("/subscriptions/:id", subscriptionController.adminGetSubscriptionById);
-router.patch("/subscriptions/:id/status", subscriptionController.adminUpdateStatus);
+router.patch("/subscriptions/:id/status", validate(subscriptionValidation.adminUpdateStatus), subscriptionController.adminUpdateStatus);
 
 // Category management
 router.get("/categories", categoryController.getAllCategories);

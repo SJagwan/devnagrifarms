@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { View, Text, Alert, ActivityIndicator, Pressable, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
-import * as Location from 'expo-location';
 import { Ionicons } from "@expo/vector-icons";
 import { customerAPI } from "@lib/api";
 import { useAuth } from "@context/AuthContext";
+import { useLocation } from "../hooks/useLocation";
 import Input from "@shared/components/Input";
 import Button from "@shared/components/Button";
 
 export default function LocationCheckScreen() {
   const [pincode, setPincode] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [gpsLoading, setGpsLoading] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState("");
+  const [checkingServiceability, setCheckingServiceability] = useState(false);
   const [useManual, setUseManual] = useState(false);
   const [detectedAddress, setDetectedAddress] = useState(null);
   
@@ -23,6 +21,7 @@ export default function LocationCheckScreen() {
   
   const router = useRouter();
   const { setLocationChecked, saveLocation } = useAuth();
+  const { detectLocation, getAddressFromPincode, loading: locationLoading, error: locationError } = useLocation();
 
   const handleSuccess = (addressObj) => {
     setValidatedAddress(addressObj);
@@ -34,83 +33,42 @@ export default function LocationCheckScreen() {
     setServiceableStatus("failure");
   };
 
-  const handleAutoDetect = async () => {
-    setGpsLoading(true);
-    setLoadingStatus("Requesting permissions...");
+  const checkServiceability = async (addressObj) => {
+    setCheckingServiceability(true);
     try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert("Permission Denied", "Please allow location access in your device settings, or enter a pincode manually.");
-        setUseManual(true);
-        setGpsLoading(false);
-        return;
-      }
-
-      setLoadingStatus("Acquiring high-accuracy GPS signal...");
-      // Use High accuracy to prevent false negatives on polygon borders
-      let location = await Location.getCurrentPositionAsync({ 
-        accuracy: Location.Accuracy.High 
+      const { data } = await customerAPI.checkServiceability({ 
+        lat: addressObj.lat, 
+        lng: addressObj.lng, 
+        pincode: addressObj.pincode 
       });
-      const { latitude, longitude } = location.coords;
-
-      setLoadingStatus("Identifying your neighborhood...");
-      // Reverse geocode to build trust by showing the user where we think they are
-      const geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
-      let addressString = "Unknown Location";
-      let city = "";
-      let state = "";
-      let detectedPincode = "";
-      
-      if (geocode && geocode.length > 0) {
-        const place = geocode[0];
-        // e.g., "Sector 62, Noida" or "Koramangala, Bengaluru"
-        const parts = [];
-        if (place.subregion || place.district) parts.push(place.subregion || place.district);
-        if (place.city) parts.push(place.city);
-        
-        city = place.city || place.district || place.subregion || "";
-        state = place.region || "";
-
-        if (parts.length === 0 && state) parts.push(state);
-        
-        addressString = parts.join(", ") || "Current Location";
-        if (place.postalCode) {
-            detectedPincode = place.postalCode;
-            setPincode(place.postalCode);
-        }
-      }
-
-      const addressObj = {
-          lat: latitude,
-          lng: longitude,
-          addressLine: addressString,
-          city: city,
-          state: state,
-          pincode: detectedPincode,
-          source: 'gps'
-      };
-
-      setDetectedAddress({
-          text: addressString,
-          lat: latitude,
-          lng: longitude
-      });
-
-      setLoadingStatus("Verifying delivery availability...");
-      const { data } = await customerAPI.checkServiceability({ lat: latitude, lng: longitude, pincode: detectedPincode });
 
       if (data.data?.serviceable) {
         handleSuccess(addressObj);
       } else {
-        handleFailure(`We currently don't deliver to ${addressString}.`);
+        handleFailure(`We currently don't deliver to ${addressObj.addressLine}.`);
       }
     } catch (error) {
-      console.log("GPS check failed", error);
-      Alert.alert("Error", "Could not fetch your location precisely. Please enter your pincode manually.");
-      setUseManual(true);
+      console.log("Serviceability check failed", error);
+      handleFailure("Could not verify serviceability at this time.");
     } finally {
-      setGpsLoading(false);
-      setLoadingStatus("");
+      setCheckingServiceability(false);
+    }
+  };
+
+  const handleAutoDetect = async () => {
+    try {
+      const address = await detectLocation();
+      setDetectedAddress({
+        text: address.addressLine,
+        lat: address.lat,
+        lng: address.lng
+      });
+      await checkServiceability({ ...address, source: 'gps' });
+    } catch (err) {
+      if (err.message === 'LOCATION_TIMEOUT' || err.message === 'PERMISSION_DENIED') {
+        setUseManual(true);
+      }
+      // Error is already handled by hook and displayed via locationError or alert in hook
     }
   };
 
@@ -120,55 +78,11 @@ export default function LocationCheckScreen() {
       return;
     }
 
-    setLoading(true);
     try {
-      // 1. Geocode the pincode to get approx lat/lng
-      let lat = null;
-      let lng = null;
-      let city = "Serviceable Area";
-      let state = "";
-      let addressLine = `Pincode Area (${pincode})`;
-
-      const geocodeResult = await Location.geocodeAsync(pincode);
-      if (geocodeResult && geocodeResult.length > 0) {
-          lat = geocodeResult[0].latitude;
-          lng = geocodeResult[0].longitude;
-
-          // Attempt to reverse geocode to get a better name if possible
-          const reverseResult = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-          if (reverseResult && reverseResult.length > 0) {
-              const place = reverseResult[0];
-              city = place.city || place.district || place.subregion || city;
-              state = place.region || "";
-
-              const parts = [];
-              if (place.subregion || place.district) parts.push(place.subregion || place.district);
-              if (place.city) parts.push(place.city);
-              if (parts.length > 0) addressLine = parts.join(", ");
-          }
-      }
-
-      // 2. Pass lat/lng and pincode to API
-      const { data } = await customerAPI.checkServiceability({ lat, lng, pincode });
-
-      if (data.data?.serviceable) {
-        handleSuccess({
-            lat: lat,
-            lng: lng,
-            addressLine: addressLine,
-            pincode: pincode,
-            city: city,
-            state: state,
-            source: 'manual'
-        });
-      } else {
-        handleFailure("We currently don't deliver to this pincode.");
-      }
-    } catch (error) {
-      console.log("Pincode check failed", error);
-      handleFailure("Could not verify serviceability at this time.");
-    } finally {
-      setLoading(false);
+      const address = await getAddressFromPincode(pincode);
+      await checkServiceability(address);
+    } catch (err) {
+      console.log("Pincode check failed", err);
     }
   };
 
@@ -176,6 +90,8 @@ export default function LocationCheckScreen() {
     await setLocationChecked(true);
     router.replace("/(tabs)");
   };
+
+  const isLoading = locationLoading || checkingServiceability;
 
   return (
     <ScrollView 
@@ -253,10 +169,11 @@ export default function LocationCheckScreen() {
         <View className="space-y-4">
           <Pressable 
             onPress={handleAutoDetect} 
-            disabled={gpsLoading}
-            className={`w-full p-4 rounded-xl flex-row items-center justify-center shadow-sm ${gpsLoading ? 'bg-green-800' : 'bg-green-600'}`}
+            disabled={isLoading}
+            className="w-full p-4 rounded-xl flex-row items-center justify-center shadow-sm"
+            style={{ backgroundColor: isLoading ? '#166534' : '#16a34a' }}
           >
-            {gpsLoading ? (
+            {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
               <>
@@ -266,13 +183,19 @@ export default function LocationCheckScreen() {
             )}
           </Pressable>
 
-          {gpsLoading && (
+          {locationLoading && (
             <Text className="text-center text-sm text-gray-500 mt-2 animate-pulse">
-              {loadingStatus}
+              Identifying your neighborhood...
             </Text>
           )}
 
-          {detectedAddress && !gpsLoading && (
+          {locationError && (
+             <Text className="text-center text-sm text-red-500 mt-2">
+               {locationError}
+             </Text>
+          )}
+
+          {detectedAddress && !isLoading && (
             <View className="bg-green-50 p-4 rounded-xl border border-green-100 mt-4 flex-row items-center">
                 <Ionicons name="checkmark-circle" size={24} color="#16a34a" />
                 <View className="ml-3 flex-1">
@@ -282,7 +205,7 @@ export default function LocationCheckScreen() {
             </View>
           )}
 
-          {!gpsLoading && (
+          {!isLoading && (
              <Pressable onPress={() => setUseManual(true)} className="p-4 items-center mt-2">
                <Text className="text-green-600 font-bold">Enter pincode manually</Text>
              </Pressable>
@@ -301,7 +224,7 @@ export default function LocationCheckScreen() {
           <Button
             title="Check Availability"
             onPress={handlePincodeCheck}
-            loading={loading}
+            loading={isLoading}
           />
           <Pressable onPress={() => setUseManual(false)} className="mt-4 items-center">
             <Text className="text-gray-500 font-medium">← Back to auto-detect</Text>
@@ -310,7 +233,7 @@ export default function LocationCheckScreen() {
       )}
 
       {/* Skip button for development/testing */}
-      {serviceableStatus === 'idle' && (
+      {__DEV__ && serviceableStatus === 'idle' && (
         <View className="mt-auto pt-8 pb-4 items-center">
           <Pressable onPress={handleSkip}>
             <Text className="text-gray-400 text-sm underline">Skip for now (Testing)</Text>

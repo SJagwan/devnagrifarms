@@ -83,7 +83,9 @@ const updateUserProfile = async (id, data) => {
     first_name: updateData.first_name,
     last_name: updateData.last_name,
     email: updateData.email || user.email,
-    email_verified: updateData.email === user.email ? !!user.email_verified_at : false,
+    email_verified: updateData.email !== undefined
+      ? false // email was changed, so unverified
+      : !!user.email_verified_at, // email untouched, return actual status
     phone: user.phone
   };
 };

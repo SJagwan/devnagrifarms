@@ -84,16 +84,15 @@ export default function AddAddressScreen() {
             <TouchableOpacity
               key={type}
               onPress={() => handleChange("address_type", type)}
-              className={`mr-3 px-4 py-2 rounded-full border ${
-                form.address_type === type
-                  ? "bg-green-600 border-green-600"
-                  : "bg-white border-gray-300"
-              }`}
+              className="mr-3 px-4 py-2 rounded-full border"
+              style={{
+                backgroundColor: form.address_type === type ? "#16a34a" : "white",
+                borderColor: form.address_type === type ? "#16a34a" : "#d1d5db",
+              }}
             >
               <Text
-                className={`font-semibold ${
-                  form.address_type === type ? "text-white" : "text-gray-700"
-                }`}
+                className="font-semibold"
+                style={{ color: form.address_type === type ? "white" : "#374151" }}
               >
                 {type}
               </Text>
@@ -180,11 +179,11 @@ export default function AddAddressScreen() {
           className="flex-row items-center mb-8"
         >
           <View
-            className={`w-6 h-6 rounded border items-center justify-center mr-3 ${
-              form.is_default
-                ? "bg-green-600 border-green-600"
-                : "bg-white border-gray-400"
-            }`}
+            className="w-6 h-6 rounded border items-center justify-center mr-3"
+            style={{
+              backgroundColor: form.is_default ? "#16a34a" : "white",
+              borderColor: form.is_default ? "#16a34a" : "#9ca3af",
+            }}
           >
             {form.is_default && <Ionicons name="checkmark" size={16} color="white" />}
           </View>
@@ -195,9 +194,8 @@ export default function AddAddressScreen() {
         <TouchableOpacity
           onPress={handleSubmit}
           disabled={loading}
-          className={`py-4 rounded-xl items-center shadow-md mb-10 ${
-            loading ? "bg-gray-400" : "bg-green-600"
-          }`}
+          className="py-4 rounded-xl items-center shadow-md mb-10"
+          style={{ backgroundColor: loading ? "#9ca3af" : "#16a34a" }}
         >
           {loading ? (
             <ActivityIndicator color="white" />

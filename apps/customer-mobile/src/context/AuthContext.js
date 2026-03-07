@@ -74,8 +74,13 @@ export function AuthProvider({ children }) {
   };
 
   const saveLocation = async (location) => {
-      await SecureStore.setItemAsync("selectedLocation", JSON.stringify(location));
-      setSelectedLocation(location);
+      if (!location) return;
+      
+      // Strip large raw data objects before persisting to SecureStore
+      const { raw, ...locationToSave } = location;
+      
+      await SecureStore.setItemAsync("selectedLocation", JSON.stringify(locationToSave));
+      setSelectedLocation(locationToSave);
       await setLocationChecked(true);
   };
 

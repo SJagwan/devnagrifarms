@@ -28,8 +28,7 @@ const updateStatus = asyncHandler(async (req, res) => {
 });
 
 const updateProfile = asyncHandler(async (req, res) => {
-  const { first_name, last_name, email } = req.body;
-  const result = await userService.updateUserProfile(req.user.id, { first_name, last_name, email });
+  const result = await userService.updateUserProfile(req.user.id, req.body);
   res.json({
     success: true,
     data: result,

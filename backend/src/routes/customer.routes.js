@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const { authenticate } = require("../middlewares/auth.middleware");
+const validate = require("../middlewares/validate");
+const userValidation = require("../validations/user.validation");
+const orderValidation = require("../validations/order.validation");
+const addressValidation = require("../validations/address.validation");
+const subscriptionValidation = require("../validations/subscription.validation");
 
 const isCustomer = (req, res, next) => {
   if (req.user.userType !== "customer") {
@@ -26,7 +31,7 @@ const userController = require("../controllers/user.controller");
 const authController = require("../controllers/auth.controller");
 
 router.get("/profile", authController.getCurrentUser);
-router.put("/profile", userController.updateProfile);
+router.put("/profile", validate(userValidation.updateProfile), userController.updateProfile);
 
 // Wallet
 router.get("/wallet/passbook", walletController.getMyPassbook);
@@ -38,12 +43,12 @@ router.post("/payments/verify", paymentController.verifyPayment);
 
 // Addresses
 router.get("/addresses", addressController.getAddresses);
-router.post("/addresses", addressController.addAddress);
+router.post("/addresses", validate(addressValidation.addAddress), addressController.addAddress);
 
 // Subscriptions
 router.get("/subscriptions", subscriptionController.getSubscriptions);
 router.get("/subscriptions/:id", subscriptionController.getSubscriptionById);
-router.post("/subscriptions", subscriptionController.createSubscription);
+router.post("/subscriptions", validate(subscriptionValidation.createSubscription), subscriptionController.createSubscription);
 router.post(
   "/subscriptions/:id/pause",
   subscriptionController.pauseSubscription,
@@ -70,7 +75,7 @@ router.get("/categories", categoryController.getAllCategories);
 // Orders
 router.get("/orders", orderController.getMyOrders);
 router.get("/orders/:id", orderController.getMyOrderById);
-router.post("/orders", orderController.createOrder);
+router.post("/orders", validate(orderValidation.createOrder), orderController.createOrder);
 
 // Serviceability
 router.post(

@@ -32,6 +32,8 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="auth" />
+      <Stack.Screen name="location" />
+      <Stack.Screen name="account" />
       <Stack.Screen name="product" />
       <Stack.Screen name="cart" />
       <Stack.Screen name="checkout" />
