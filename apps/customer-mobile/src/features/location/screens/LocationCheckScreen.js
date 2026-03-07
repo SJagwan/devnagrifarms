@@ -21,7 +21,7 @@ export default function LocationCheckScreen() {
   
   const router = useRouter();
   const { setLocationChecked, saveLocation } = useAuth();
-  const { detectLocation, getAddressFromPincode, loading: locationLoading, error: locationError } = useLocation();
+  const { detectLocation, getAddressFromPincode, openSettings, loading: locationLoading, error: locationError } = useLocation();
 
   const handleSuccess = (addressObj) => {
     setValidatedAddress(addressObj);
@@ -66,9 +66,8 @@ export default function LocationCheckScreen() {
       await checkServiceability({ ...address, source: 'gps' });
     } catch (err) {
       if (err.message === 'LOCATION_TIMEOUT' || err.message === 'PERMISSION_DENIED') {
-        setUseManual(true);
+        // We handle this via the locationError UI state below
       }
-      // Error is already handled by hook and displayed via locationError or alert in hook
     }
   };
 
@@ -189,10 +188,27 @@ export default function LocationCheckScreen() {
             </Text>
           )}
 
-          {locationError && (
+          {locationError && locationError !== 'PERMISSION_DENIED' && (
              <Text className="text-center text-sm text-red-500 mt-2">
                {locationError}
              </Text>
+          )}
+
+          {locationError === 'PERMISSION_DENIED' && (
+            <View className="bg-orange-50 p-4 rounded-xl border border-orange-100 mt-2">
+              <View className="flex-row items-center mb-2">
+                <Ionicons name="warning" size={20} color="#ea580c" />
+                <Text className="ml-2 text-orange-800 font-bold">Location Permission Denied</Text>
+              </View>
+              <Text className="text-orange-700 text-sm mb-4">
+                We need location access to detect your neighborhood automatically. Please enable it in your system settings.
+              </Text>
+              <Button 
+                title="Open Settings" 
+                onPress={openSettings}
+                variant="outline"
+              />
+            </View>
           )}
 
           {detectedAddress && !isLoading && (

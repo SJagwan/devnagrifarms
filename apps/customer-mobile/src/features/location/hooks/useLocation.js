@@ -38,7 +38,7 @@ export function useLocation() {
       if (err.message === 'LOCATION_TIMEOUT') {
         errorMessage = 'GPS acquisition timed out. Please try entering a pincode.';
       } else if (err.message === 'PERMISSION_DENIED') {
-        errorMessage = 'Location permission is required for auto-detection.';
+        errorMessage = 'PERMISSION_DENIED'; // Pass the raw code for the UI to handle
       }
       
       setError(errorMessage);
@@ -78,9 +78,14 @@ export function useLocation() {
     }
   }, []);
 
+  const openSettings = useCallback(async () => {
+    await locationService.openSettings();
+  }, []);
+
   return {
     detectLocation,
     getAddressFromPincode,
+    openSettings,
     loading,
     error
   };

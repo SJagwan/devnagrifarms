@@ -70,15 +70,6 @@ module.exports = {
         ),
       },
     });
-
-    await queryInterface.addConstraint("address_user", {
-      fields: ["user_id"],
-      type: "unique",
-      name: "unique_default_address_per_user",
-      where: {
-        is_default: true,
-      },
-    });
   },
 
   down: async (queryInterface, Sequelize) => {

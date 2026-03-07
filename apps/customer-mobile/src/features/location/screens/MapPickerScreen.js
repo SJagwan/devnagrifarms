@@ -27,8 +27,14 @@ export default function MapPickerScreen() {
     (async () => {
       const hasPermission = await locationService.requestPermissions();
       if (!hasPermission) {
-        Alert.alert("Permission Denied", "Location access is required.");
-        router.back();
+        Alert.alert(
+          "Permission Required", 
+          "Location access is needed to show your current neighborhood on the map.",
+          [
+            { text: "Go Back", onPress: () => router.back(), style: "cancel" },
+            { text: "Open Settings", onPress: () => locationService.openSettings() }
+          ]
+        );
         return;
       }
 
@@ -130,7 +136,9 @@ export default function MapPickerScreen() {
          isServiceable={isServiceable} 
          loading={loading} 
          onConfirm={() => {
-            if (params.returnTo) {
+            if (params.returnTo === "back") {
+               router.back();
+            } else if (params.returnTo) {
                router.replace(params.returnTo);
             } else {
                router.replace("/(tabs)");

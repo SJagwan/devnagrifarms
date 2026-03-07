@@ -22,7 +22,11 @@ export const customerAPI = {
 
   // Addresses
   getAddresses: () => api.get("/customer/addresses"),
+  getAddressById: (id) => api.get(`/customer/addresses/${id}`),
   addAddress: (data) => api.post("/customer/addresses", data),
+  updateAddress: (id, data) => api.put(`/customer/addresses/${id}`, data),
+  deleteAddress: (id) => api.delete(`/customer/addresses/${id}`),
+  setDefaultAddress: (id) => api.patch(`/customer/addresses/${id}/default`),
 
   // Subscriptions
   createSubscription: (data) => api.post("/customer/subscriptions", data),

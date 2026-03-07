@@ -43,7 +43,11 @@ router.post("/payments/verify", paymentController.verifyPayment);
 
 // Addresses
 router.get("/addresses", addressController.getAddresses);
+router.get("/addresses/:id", validate(addressValidation.addressIdParam), addressController.getAddressById);
 router.post("/addresses", validate(addressValidation.addAddress), addressController.addAddress);
+router.put("/addresses/:id", validate(addressValidation.addressIdParam), validate(addressValidation.updateAddress), addressController.updateAddress);
+router.delete("/addresses/:id", validate(addressValidation.addressIdParam), addressController.deleteAddress);
+router.patch("/addresses/:id/default", validate(addressValidation.addressIdParam), addressController.setDefaultAddress);
 
 // Subscriptions
 router.get("/subscriptions", subscriptionController.getSubscriptions);

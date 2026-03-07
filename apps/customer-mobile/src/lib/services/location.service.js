@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import { Linking } from 'react-native';
 
 /**
  * Service for handling device location (GPS)
@@ -11,6 +12,17 @@ export const locationService = {
   requestPermissions: async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     return status === 'granted';
+  },
+
+  /**
+   * Open app settings to allow user to manually enable permissions
+   */
+  openSettings: async () => {
+    try {
+      await Linking.openSettings();
+    } catch (error) {
+      console.error('Failed to open settings:', error);
+    }
   },
 
   /**
