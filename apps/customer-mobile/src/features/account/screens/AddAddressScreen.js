@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,29 +11,51 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { customerAPI } from "@lib/api";
+import { useAuth } from "@context/AuthContext";
 
 export default function AddAddressScreen() {
   const router = useRouter();
+  const { selectedLocation } = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     address_type: "Home",
     address_line_1: "",
     address_line_2: "",
     city: "",
-    state: "Delhi",
+    state: "",
     zip_code: "",
-    latitude: 28.6139, // Default to New Delhi
-    longitude: 77.2090,
+    latitude: null,
+    longitude: null,
     is_default: false,
   });
+
+  // Populate form when map selection changes
+  useEffect(() => {
+    if (selectedLocation) {
+      setForm((prev) => ({
+        ...prev,
+        latitude: selectedLocation.lat || prev.latitude,
+        longitude: selectedLocation.lng || prev.longitude,
+        city: selectedLocation.city || "",
+        state: selectedLocation.state || "",
+        zip_code: selectedLocation.pincode || "",
+        address_line_2: selectedLocation.addressLine || "",
+      }));
+    }
+  }, [selectedLocation]);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = async () => {
-    if (!form.address_line_1 || !form.city || !form.zip_code) {
-      Alert.alert("Error", "Please fill required fields (Address Line 1, City, Zip)");
+    if (!form.address_line_1 || !form.city || !form.state || !form.zip_code) {
+      Alert.alert("Error", "Please fill required fields (Address Line 1, City, State, Zip)");
+      return;
+    }
+
+    if (!form.latitude || !form.longitude) {
+      Alert.alert("Location Required", "Please select a location on the map.");
       return;
     }
 
@@ -79,36 +101,41 @@ export default function AddAddressScreen() {
           ))}
         </View>
 
-        {/* Location (Fake Map Placeholder) */}
-        <View className="h-40 bg-gray-100 rounded-xl mb-6 items-center justify-center border border-gray-200">
-          <Ionicons name="map-outline" size={48} color="#D1D5DB" />
-          <Text className="text-gray-500 mt-2 font-medium">
-            Location pinned: New Delhi (Demo)
-          </Text>
+        {/* Location (Map Pin Data) */}
+        <View className="bg-green-50 rounded-xl mb-6 p-4 border border-green-200 shadow-sm flex-row items-center">
+          <Ionicons name="map" size={32} color="#16a34a" />
+          <View className="flex-1 ml-3 pr-2">
+            <Text className="text-gray-800 font-bold text-sm mb-1">
+              Delivery Location
+            </Text>
+            <Text className="text-gray-600 text-xs leading-4" numberOfLines={2}>
+              {selectedLocation?.addressLine || "No precise location selected. Tap to drop a pin."}
+            </Text>
+          </View>
           <TouchableOpacity
-            className="mt-2 bg-white px-3 py-1 rounded-lg border border-gray-300 shadow-sm"
-            onPress={() => Alert.alert("Demo", "Using default demo coordinates for MVP testing.")}
+            className="bg-white px-3 py-2 rounded-lg border border-gray-300"
+            onPress={() => router.push("/location/map?returnTo=/account/addresses/add")}
           >
-            <Text className="text-xs font-bold text-gray-700">Change Location</Text>
+            <Text className="text-xs font-bold text-green-700">Change Map Pin</Text>
           </TouchableOpacity>
         </View>
 
         {/* Form Fields */}
         <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-1">Address Line 1 *</Text>
+          <Text className="text-gray-700 font-medium mb-1">Address Line 1 (House/Flat No) *</Text>
           <TextInput
             className="border border-gray-300 rounded-xl p-3 bg-gray-50 text-gray-900"
-            placeholder="House No, Building, Street"
+            placeholder="e.g. Flat 4B, XYZ Apartments"
             value={form.address_line_1}
             onChangeText={(t) => handleChange("address_line_1", t)}
           />
         </View>
 
         <View className="mb-4">
-          <Text className="text-gray-700 font-medium mb-1">Address Line 2</Text>
+          <Text className="text-gray-700 font-medium mb-1">Address Line 2 (Area/Landmark)</Text>
           <TextInput
             className="border border-gray-300 rounded-xl p-3 bg-gray-50 text-gray-900"
-            placeholder="Landmark, Area (Optional)"
+            placeholder="Sector 62, Near Metro Station"
             value={form.address_line_2}
             onChangeText={(t) => handleChange("address_line_2", t)}
           />
@@ -125,11 +152,12 @@ export default function AddAddressScreen() {
             />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-700 font-medium mb-1">State</Text>
+            <Text className="text-gray-700 font-medium mb-1">State *</Text>
             <TextInput
               className="border border-gray-300 rounded-xl p-3 bg-gray-50 text-gray-900"
+              placeholder="State"
               value={form.state}
-              editable={false} // Hardcoded for demo/MVP focus
+              onChangeText={(t) => handleChange("state", t)}
             />
           </View>
         </View>

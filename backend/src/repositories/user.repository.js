@@ -125,6 +125,13 @@ const findUserForAuth = async (identifier, userType = null) => {
   });
 };
 
+const findUserByEmail = async (email) => {
+  return await User.findOne({
+    where: { email },
+    attributes: ["id", "email", "email_verified_at"],
+  });
+};
+
 const createUser = async (userData) => {
   return await User.create(userData);
 };
@@ -143,6 +150,7 @@ module.exports = {
   getUserByIdFull,
   findUserByIdentifier,
   findUserForAuth,
+  findUserByEmail,
   createUser,
   updateUser,
 };

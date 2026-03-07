@@ -49,8 +49,48 @@ const updateUserStatus = async (id, status, adminId) => {
   return { id, status };
 };
 
+const updateUserProfile = async (id, data) => {
+  const user = await userRepository.findUserById(id, false);
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  const updateData = {
+    first_name: data.first_name !== undefined ? data.first_name : user.first_name,
+    last_name: data.last_name !== undefined ? data.last_name : user.last_name,
+  };
+
+  // If email is provided and it's different from the current email
+  if (data.email && data.email !== user.email) {
+    // Check if another user is already using this email
+    const existingUserWithEmail = await userRepository.findUserByEmail(data.email);
+    
+    // We only block the update if the existing user has actually VERIFIED this email.
+    // Multiple users can claim the same unverified email. The true owner is the first to verify it.
+    if (existingUserWithEmail && existingUserWithEmail.id !== id && existingUserWithEmail.email_verified_at !== null) {
+      throw new AppError("This email is already registered and verified by another account", 409);
+    }
+    
+    updateData.email = data.email;
+    // When an email is changed, it immediately becomes unverified
+    updateData.email_verified_at = null;
+  }
+
+  await userRepository.updateUser(id, updateData);
+  
+  return {
+    id: user.id,
+    first_name: updateData.first_name,
+    last_name: updateData.last_name,
+    email: updateData.email || user.email,
+    email_verified: updateData.email === user.email ? !!user.email_verified_at : false,
+    phone: user.phone
+  };
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
   updateUserStatus,
+  updateUserProfile,
 };

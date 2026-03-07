@@ -3,7 +3,7 @@ import { Redirect } from "expo-router";
 import { useAuth } from "@context/AuthContext";
 
 export default function Index() {
-  const { user, loading } = useAuth();
+  const { user, loading, hasCheckedLocation } = useAuth();
 
   if (loading) {
     return (
@@ -13,5 +13,12 @@ export default function Index() {
     );
   }
 
-  return user ? <Redirect href="/(tabs)" /> : <Redirect href="/auth/login" />;
+  if (user) {
+    if (!hasCheckedLocation) {
+      return <Redirect href="/location/check" />;
+    }
+    return <Redirect href="/(tabs)" />;
+  }
+
+  return <Redirect href="/auth/login" />;
 }

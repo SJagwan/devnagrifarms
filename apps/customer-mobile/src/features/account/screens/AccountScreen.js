@@ -78,6 +78,7 @@ export default function AccountScreen() {
 
   const handleMenuPress = (route) => {
     if (
+      route === "/account/profile" ||
       route === "/account/addresses" ||
       route === "/orders" ||
       route === "/account/subscriptions" ||

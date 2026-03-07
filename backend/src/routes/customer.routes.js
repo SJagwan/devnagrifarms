@@ -22,12 +22,11 @@ const addressController = require("../controllers/address.controller");
 const subscriptionController = require("../controllers/subscription.controller");
 const walletController = require("../controllers/wallet.controller");
 const paymentController = require("../controllers/payment.controller");
+const userController = require("../controllers/user.controller");
+const authController = require("../controllers/auth.controller");
 
-router.use(authenticate, isCustomer);
-
-router.get("/profile", (req, res) => {
-  res.json({ success: true, message: "Get customer profile" });
-});
+router.get("/profile", authController.getCurrentUser);
+router.put("/profile", userController.updateProfile);
 
 // Wallet
 router.get("/wallet/passbook", walletController.getMyPassbook);
@@ -35,6 +34,7 @@ router.get("/wallet/passbook", walletController.getMyPassbook);
 // Payments
 router.post("/payments/create-order", paymentController.createAddFundsOrder);
 router.post("/payments/verify", paymentController.verifyPayment);
+
 
 // Addresses
 router.get("/addresses", addressController.getAddresses);

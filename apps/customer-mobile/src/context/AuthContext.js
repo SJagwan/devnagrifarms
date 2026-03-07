@@ -11,6 +11,8 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasCheckedLocation, setHasCheckedLocation] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
   useEffect(() => {
     checkUser();
@@ -20,6 +22,16 @@ export function AuthProvider({ children }) {
     try {
       const userJson = await SecureStore.getItemAsync("user");
       const token = await SecureStore.getItemAsync("accessToken");
+      const locationChecked = await SecureStore.getItemAsync("hasCheckedLocation");
+      const locationJson = await SecureStore.getItemAsync("selectedLocation");
+      
+      if (locationJson) {
+          setSelectedLocation(JSON.parse(locationJson));
+          setHasCheckedLocation(true);
+      } else if (locationChecked === "true") {
+        setHasCheckedLocation(true);
+      }
+
       if (userJson && token) {
         setUser(JSON.parse(userJson));
       }
@@ -43,7 +55,28 @@ export function AuthProvider({ children }) {
     await SecureStore.deleteItemAsync("user");
     await SecureStore.deleteItemAsync("accessToken");
     await SecureStore.deleteItemAsync("refreshToken");
+    await SecureStore.deleteItemAsync("hasCheckedLocation");
+    await SecureStore.deleteItemAsync("selectedLocation");
     setUser(null);
+    setHasCheckedLocation(false);
+    setSelectedLocation(null);
+  };
+
+  const setLocationChecked = async (status) => {
+    if (status) {
+      await SecureStore.setItemAsync("hasCheckedLocation", "true");
+    } else {
+      await SecureStore.deleteItemAsync("hasCheckedLocation");
+      await SecureStore.deleteItemAsync("selectedLocation");
+      setSelectedLocation(null);
+    }
+    setHasCheckedLocation(status);
+  };
+
+  const saveLocation = async (location) => {
+      await SecureStore.setItemAsync("selectedLocation", JSON.stringify(location));
+      setSelectedLocation(location);
+      await setLocationChecked(true);
   };
 
   const refreshUser = async () => {
@@ -69,6 +102,10 @@ export function AuthProvider({ children }) {
         logout,
         refreshUser,
         isAuthenticated: !!user,
+        hasCheckedLocation,
+        setLocationChecked,
+        selectedLocation,
+        saveLocation
       }}
     >
       {children}

@@ -4,6 +4,7 @@ import api from "../apiClient";
 export const customerAPI = {
   // Profile
   getProfile: () => api.get("/customer/profile"),
+  updateProfile: (data) => api.put("/customer/profile", data),
 
   // Products
   getProducts: (params = {}) => api.get("/customer/products", { params }),

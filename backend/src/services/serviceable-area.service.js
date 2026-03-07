@@ -101,13 +101,8 @@ const checkPointServiceability = async ({ lat, lng, pincode }) => {
     return { serviceable: true, message: "Serviceable (Dev Mode)" };
   }
 
-  // If pincode matches name or some field? (optional)
-  if (pincode) {
-    const match = areas.find((a) => a.pincodes && a.pincodes.includes(pincode));
-    if (match) return { serviceable: true, area: match };
-  }
-
-  // If lat/lng, do a PIP (Point in Polygon) check in JS for now (low scale)
+  // Primary Check: Point in Polygon using precise lat/lng coordinates.
+  // We prioritize this over pincodes because pincode areas are too large for hyperlocal farm delivery.
   if (lat && lng) {
     const point = [Number(lat), Number(lng)];
     for (const area of areas) {
@@ -125,21 +120,21 @@ const checkPointServiceability = async ({ lat, lng, pincode }) => {
         polygon = area.coordinates;
       }
 
-      // GeoJSON is [lng, lat], but our ray-casting expects [lat, lng] or we swap?
-      // ST_GeomFromText('POLYGON((lng lat, ...))') -> MySQL stores as X(lng) Y(lat).
-      // Sequelize/MySQL generic geometry usually returns coordinates as [x, y] => [lng, lat].
-      // My isPointInPolygon uses point[0] as x(lat?) and point[1] as y(lng?).
-      // Wait, isPointInPolygon vars are: x = point[0], y = point[1].
-      // If point passed is [lat, lng], then x=lat, y=lng.
-      // GeoJSON coordinates are [lng, lat].
-      // So we need to ensure we compare correctly.
-      // Let's swap the polygon coordinates to [lat, lng] for the check.
-
+      // GeoJSON is [lng, lat], but our ray-casting expects [lat, lng]
       const polygonLatLng = polygon.map((p) => [p[1], p[0]]);
 
       if (isPointInPolygon(point, polygonLatLng)) {
         return { serviceable: true, area: area };
       }
+    }
+  }
+
+  // Fallback Check: Only use pincode if no coordinates were provided (e.g. legacy/testing)
+  if (pincode && (!lat || !lng)) {
+    const match = areas.find((a) => a.pincodes && a.pincodes.includes(pincode));
+    if (match) {
+        console.warn("⚠️ Serviceability verified using fallback Pincode instead of precise coordinates.");
+        return { serviceable: true, area: match };
     }
   }
 
