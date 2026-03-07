@@ -19,9 +19,20 @@ Web-based management dashboard for Devnagri Farms operations, built with React a
 | **Order Mgmt** | ✅ Complete | List, Details, Status Updates, and Customer Profile links. |
 | **Subscription Mgmt** | ✅ Complete | List, Details, and Status management. |
 | **Customer Mgmt** | ✅ Complete | Searchable list, detailed profiles (stats, orders, subs, addresses), and Block/Activate toggle. |
-| **Finance Dashboard**| 🚧 Missing | UI for Wallet ledger and manual adjustments. |
+| **Finance Dashboard**| ✅ Complete | UI for Wallet ledger and system-wide transaction monitoring. |
 
-## 🤝 Development Conventions
-- **Confirmation:** Always use `ConfirmDialog` for destructive or sensitive actions (like blocking a user).
-- **Navigation:** Maintain tight interlinking between orders, subscriptions, and customer profiles.
-- **Robustness:** Use fallbacks for dates (`createdAt` vs `created_at`) to handle backend database mappings gracefully.
+## 🤝 Development Conventions & Standards
+
+### 1. Robust UI/UX
+- **Confirmation Flow:** Always use `ConfirmDialog` for destructive or sensitive actions (like blocking a user or deleting a zone).
+- **Feedback:** Provide immediate visual feedback via `Toaster` notifications for all API interactions.
+- **Scrollable Modals:** Use the enhanced `Modal` component which supports scrollable content to prevent clipping on small viewports.
+
+### 2. Data Handling
+- **Interlinking:** Maintain tight interlinking between orders, subscriptions, and customer profiles for operational efficiency.
+- **Date Resilience:** Use fallbacks for dates (`createdAt` vs `created_at`) to handle backend database mappings gracefully.
+- **Map Integrity:** When using maps in modals, always call `invalidateSize()` after a short delay to ensure correct tile rendering.
+
+### 3. Navigation
+- Use React Router DOM `useNavigate` and `Link` for internal routing.
+- Keep route structure flat where possible to simplify breadcrumbs and state management.
