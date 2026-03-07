@@ -11,6 +11,7 @@ import Subscriptions from "../pages/Subscriptions";
 import SubscriptionDetail from "../pages/SubscriptionDetail";
 import Customers from "../pages/Customers";
 import CustomerDetail from "../pages/CustomerDetail";
+import Banners from "../pages/Banners";
 
 export const protectedRoutes = [
   {
@@ -60,6 +61,10 @@ export const protectedRoutes = [
   {
     path: "/products/:id/variants",
     element: ProductVariants,
+  },
+  {
+    path: "/banners",
+    element: Banners,
   },
   {
     path: "/serviceable-areas",

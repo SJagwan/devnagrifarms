@@ -13,6 +13,8 @@ const orderController = require("../controllers/order.controller");
 const subscriptionController = require("../controllers/subscription.controller");
 const userController = require("../controllers/user.controller");
 const walletController = require("../controllers/wallet.controller");
+const bannerController = require("../controllers/banner.controller");
+const bannerValidation = require("../validations/banner.validation");
 
 const isAdmin = (req, res, next) => {
   if (req.user.userType !== "admin") {
@@ -97,6 +99,21 @@ router.delete(
   "/serviceable-areas/:id",
   serviceableAreaController.deleteServiceableArea
 );
+
+// Banners management
+router.get("/banners", bannerController.getAllBanners);
+router.get("/banners/:id", bannerController.getBannerById);
+router.post(
+  "/banners",
+  validate(bannerValidation.createBanner),
+  bannerController.createBanner
+);
+router.put(
+  "/banners/:id",
+  validate(bannerValidation.updateBanner),
+  bannerController.updateBanner
+);
+router.delete("/banners/:id", bannerController.deleteBanner);
 
 // Storage (S3) - pre-signed URL generation
 router.post("/storage/presign", storageController.getPresignedUploadUrl);

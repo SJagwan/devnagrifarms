@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Text,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import HomeHeader from "@features/home/components/HomeHeader";
@@ -135,7 +136,25 @@ export default function HomeScreen() {
         }
       >
         <View className="mt-4" />
-        <PromoCarousel onBannerPress={() => router.push("/products")} />
+        <PromoCarousel
+          onBannerPress={(item) => {
+            if (item.link_type === "PRODUCT" && item.link_id) {
+              router.push({
+                pathname: "/products/[id]",
+                params: { id: item.link_id },
+              });
+            } else if (item.link_type === "CATEGORY" && item.link_id) {
+              router.push({
+                pathname: "/products",
+                params: { categoryId: item.link_id },
+              });
+            } else if (item.link_type === "EXTERNAL" && item.external_url) {
+              Linking.openURL(item.external_url);
+            } else {
+              router.push("/products");
+            }
+          }}
+        />
 
         {error && (
           <View className="mx-4 mb-4 p-3 bg-red-50 rounded-lg">

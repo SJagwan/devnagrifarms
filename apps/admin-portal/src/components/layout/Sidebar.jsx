@@ -9,6 +9,7 @@ const menuItems = [
   { icon: "👥", label: "Customers", path: "/customers" },
   { icon: "📂", label: "Categories", path: "/categories" },
   { icon: "🛒", label: "Products", path: "/products" },
+  { icon: "🚩", label: "Banners", path: "/banners" },
   { icon: "📍", label: "Serviceable Areas", path: "/serviceable-areas" },
 ];
 
