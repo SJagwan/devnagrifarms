@@ -16,6 +16,12 @@ const findUserById = async (id, activeOnly = true) => {
         "updated_at",
       ],
     },
+    include: [{ 
+      model: AddressUser, 
+      as: "addresses",
+      where: { is_default: true },
+      required: false
+    }],
   });
 };
 
@@ -122,6 +128,7 @@ const findUserForAuth = async (identifier, userType = null) => {
       "user_type",
       "status",
     ],
+    include: [{ model: AddressUser, as: "addresses" }],
   });
 };
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { View, Text, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter, Stack } from "expo-router";
 import { useAuth } from "@context/AuthContext";
 import { customerAPI } from "@lib/api";
@@ -90,6 +91,22 @@ export default function ProfileScreen() {
           contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 24, paddingBottom: 60, flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Avatar Edit Section */}
+          <View className="items-center mb-8">
+            <Pressable 
+              onPress={() => Alert.alert("Coming Soon", "Image picker will be integrated soon!")}
+              className="relative"
+            >
+              <View className="w-24 h-24 rounded-3xl bg-green-50 items-center justify-center border-2 border-green-100 shadow-sm">
+                <Ionicons name="person" size={48} color="#16a34a" />
+              </View>
+              <View className="absolute -bottom-2 -right-2 bg-white w-10 h-10 rounded-full items-center justify-center shadow-md border border-gray-100">
+                <Ionicons name="camera" size={20} color="#16a34a" />
+              </View>
+            </Pressable>
+            <Text className="text-green-600 font-bold mt-4 text-sm">Change Profile Photo</Text>
+          </View>
+
           <View className="mb-6">
             <Text className="text-sm font-medium text-gray-500 mb-2">Phone Number</Text>
             <View className="bg-gray-100 p-4 rounded-xl border border-gray-200">

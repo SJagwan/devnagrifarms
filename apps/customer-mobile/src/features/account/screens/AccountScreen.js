@@ -2,13 +2,14 @@ import { View, Text, ScrollView, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, Stack } from "expo-router";
 import { useAuth } from "@context/AuthContext";
+import { LinearGradient } from "expo-linear-gradient";
 import Button from "@shared/components/Button";
 
 const MENU_SECTIONS = [
   {
     title: "My Account",
     items: [
-      { icon: "person-outline", label: "Profile", route: "/account/profile" },
+      { icon: "person-outline", label: "Edit Profile", route: "/account/profile" },
       {
         icon: "location-outline",
         label: "Addresses",
@@ -92,26 +93,38 @@ export default function AccountScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      <Stack.Screen options={{ headerTitle: "Account" }} />
+      <Stack.Screen options={{ headerTitle: "Account", headerTitleStyle: { fontWeight: '900' } }} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* User Card */}
-        <View className="bg-white mx-4 mt-4 p-4 rounded-2xl border border-gray-100">
-          <View className="flex-row items-center">
-            <View className="w-16 h-16 rounded-full bg-green-100 items-center justify-center">
-              <Ionicons name="person" size={32} color="#16a34a" />
-            </View>
-            <View className="ml-4 flex-1">
-              <Text className="text-lg font-bold text-gray-900">
-                {user?.name || "Customer"}
-              </Text>
-              <Text className="text-gray-500 text-sm">
-                {user?.phone || user?.email || "No contact info"}
-              </Text>
-            </View>
-            <Pressable onPress={() => handleMenuPress("/account/profile")}>
-              <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
-            </Pressable>
+        {/* Premium User Card */}
+        <View className="mx-4 mt-6 shadow-xl shadow-green-900/20">
+          <View className="rounded-[28px] overflow-hidden">
+            <LinearGradient
+              colors={["#16a34a", "#15803d"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="p-6"
+            >
+              <View className="flex-row items-center">
+                <View className="w-20 h-20 rounded-2xl bg-white/20 items-center justify-center border border-white/30 backdrop-blur-md">
+                  <Ionicons name="person" size={40} color="white" />
+                </View>
+                <View className="ml-5 flex-1">
+                  <Text className="text-2xl font-black text-white tracking-tight">
+                    {user?.name || "Customer"}
+                  </Text>
+                  <View className="flex-row items-center mt-1 opacity-80">
+                    <Ionicons name="call-outline" size={14} color="white" />
+                    <Text className="text-white text-sm font-bold ml-1">
+                      {user?.phone || user?.email || "No contact info"}
+                    </Text>
+                  </View>
+                  <View className="mt-3 bg-white/20 self-start px-3 py-1 rounded-full border border-white/20">
+                    <Text className="text-[10px] font-black text-white uppercase tracking-wider">Verified Member</Text>
+                  </View>
+                </View>
+              </View>
+            </LinearGradient>
           </View>
         </View>
 
@@ -121,7 +134,7 @@ export default function AccountScreen() {
             <Text className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 mb-2">
               {section.title}
             </Text>
-            <View className="bg-white mx-4 rounded-2xl border border-gray-100 overflow-hidden">
+            <View className="bg-white mx-4 rounded-[28px] border border-gray-100 overflow-hidden">
               {section.items.map((item, itemIndex) => (
                 <Pressable
                   key={itemIndex}
