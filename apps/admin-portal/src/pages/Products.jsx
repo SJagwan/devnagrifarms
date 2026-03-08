@@ -7,6 +7,8 @@ import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import TextField from "../components/ui/TextField";
 import Table from "../components/ui/Table";
+import ImageUpload from "../components/ui/ImageUpload";
+import { getPublicImageUrl } from "../lib/storage";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -119,7 +121,7 @@ export default function Products() {
       label: "Preview",
       render: (row) => (
         <img
-          src={row.image_url || "https://via.placeholder.com/150"}
+          src={row.image_url ? getPublicImageUrl(row.image_url) : "https://via.placeholder.com/150"}
           alt={row.name}
           className="w-12 h-12 object-cover rounded-lg border border-gray-200 shadow-xs"
         />
@@ -249,12 +251,14 @@ export default function Products() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-          <TextField
-            label="Image URL"
+          
+          <ImageUpload
+            label="Product Image"
             value={form.image_url}
-            onChange={(e) => handleChange("image_url", e.target.value)}
-            placeholder="https://..."
+            onChange={(key) => handleChange("image_url", key)}
+            prefix="products"
           />
+
           <TextField
             label="Tax % (GST)"
             type="number"
@@ -262,7 +266,7 @@ export default function Products() {
             value={form.default_tax}
             onChange={(e) => handleChange("default_tax", e.target.value)}
           />
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3 pt-4">
             <Button
               type="button"
               variant="outline"

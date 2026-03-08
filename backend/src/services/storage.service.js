@@ -40,7 +40,6 @@ async function getPresignedPutUrl({ key, contentType, expiresIn = 300 }) {
     Bucket: BUCKET,
     Key: key,
     ContentType: contentType || "application/octet-stream",
-    ACL: "public-read", // optional: or remove if using private + CDN
   });
   const url = await getSignedUrl(s3, command, { expiresIn });
   return { url, bucket: BUCKET, key };
@@ -68,7 +67,29 @@ async function deleteObject(key) {
   return { success: true, key };
 }
 
+/**
+ * Delete an object from S3 by its full URL.
+ * Extracts the key and calls deleteObject.
+ */
+async function deleteObjectByUrl(url) {
+  if (!url || typeof url !== "string") return;
+  
+  // Only attempt deletion if it's an S3 URL
+  if (url.includes(".amazonaws.com/")) {
+    try {
+      const urlParts = url.split(".amazonaws.com/");
+      if (urlParts.length > 1) {
+        const key = decodeURIComponent(urlParts[1]);
+        return await deleteObject(key);
+      }
+    } catch (error) {
+      console.error("Failed to extract key from URL for deletion:", error);
+    }
+  }
+}
+
 module.exports = {
   getPresignedPutUrl,
   deleteObject,
+  deleteObjectByUrl,
 };

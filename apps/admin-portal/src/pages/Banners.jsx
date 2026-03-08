@@ -7,6 +7,8 @@ import PageContainer from "../components/ui/PageContainer";
 import Modal from "../components/ui/Modal";
 import Table from "../components/ui/Table";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
+import ImageUpload from "../components/ui/ImageUpload";
+import { getPublicImageUrl } from "../lib/storage";
 
 export default function Banners() {
   const [banners, setBanners] = useState([]);
@@ -140,7 +142,7 @@ export default function Banners() {
       label: "Preview",
       render: (row) => (
         <img
-          src={row.image_url}
+          src={getPublicImageUrl(row.image_url)}
           alt={row.title}
           className="w-20 h-12 object-cover rounded shadow-sm border border-gray-100"
         />
@@ -274,12 +276,11 @@ export default function Banners() {
             />
           </div>
 
-          <TextField
-            label="Image URL"
+          <ImageUpload
+            label="Banner Image"
             value={formData.image_url}
-            onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-            required
-            placeholder="https://..."
+            onChange={(key) => setFormData({ ...formData, image_url: key })}
+            prefix="banners"
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

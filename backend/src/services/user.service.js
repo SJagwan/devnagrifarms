@@ -1,5 +1,6 @@
 const userRepository = require("../repositories/user.repository");
 const AppError = require("../utils/AppError");
+const storageService = require("./storage.service");
 
 const getAllUsers = async (query) => {
   const { page = 1, limit = 10, userType, status, search, sortBy, sortDir } = query;
@@ -79,6 +80,13 @@ const updateUserProfile = async (id, data) => {
 
   await userRepository.updateUser(id, updateData);
   
+  // Cleanup old avatar from S3 if it changed or was removed
+  if (data.avatar_url !== undefined && user.avatar_url && data.avatar_url !== user.avatar_url) {
+    await storageService.deleteObjectByUrl(user.avatar_url);
+  } else if (data.avatar_url === "" && user.avatar_url) {
+    await storageService.deleteObjectByUrl(user.avatar_url);
+  }
+
   return {
     id: user.id,
     first_name: updateData.first_name,

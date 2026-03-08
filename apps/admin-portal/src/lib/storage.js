@@ -1,4 +1,5 @@
 import axios from "axios";
+import api from "./api/http";
 
 /**
  * Request a pre-signed S3 upload URL from backend and upload file directly.
@@ -6,10 +7,10 @@ import axios from "axios";
  */
 export async function presignAndUpload({ file, key, contentType }) {
   if (!file) throw new Error("file is required");
-  const finalKey = key || `uploads/${crypto.randomUUID()}-${file.name}`;
+  const finalKey = key || `uploads/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
   const ct = contentType || file.type || "application/octet-stream";
 
-  const presignRes = await axios.post("/api/admin/storage/presign", {
+  const presignRes = await api.post("/admin/storage/presign", {
     key: finalKey,
     contentType: ct,
   });
@@ -34,7 +35,7 @@ export async function uploadVariantImages(
   const list = Array.from(files || []).slice(0, 3);
   const results = [];
   for (const file of list) {
-    const key = `${baseKeyPrefix}/${crypto.randomUUID()}-${file.name}`;
+    const key = `${baseKeyPrefix}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
     const { key: storedKey } = await presignAndUpload({ file, key });
     results.push({ key: storedKey });
   }
@@ -63,7 +64,7 @@ export async function deleteImage(key) {
   // Skip deletion if it's a full URL (not our S3 key)
   if (/^https?:\/\//.test(key)) return { success: true, skipped: true };
 
-  await axios.delete("/api/admin/storage/delete", {
+  await api.delete("/admin/storage/delete", {
     data: { key },
   });
   return { success: true, key };

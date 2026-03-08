@@ -5,7 +5,7 @@ resource "random_string" "suffix" {
 }
 
 resource "aws_s3_bucket" "this" {
-  bucket        = "\${var.project_name}-\${var.environment}-web-\${random_string.suffix.result}"
+  bucket        = "${var.project_name}-${var.environment}-web-${random_string.suffix.result}"
   force_destroy = true
 }
 
@@ -18,8 +18,8 @@ resource "aws_s3_bucket_public_access_block" "this" {
 }
 
 resource "aws_cloudfront_origin_access_control" "this" {
-  name                              = "\${var.project_name}-\${var.environment}-oac"
-  description                       = "OAC for \${var.environment} web"
+  name                              = "${var.project_name}-${var.environment}-oac"
+  description                       = "OAC for ${var.environment} web"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
@@ -64,7 +64,12 @@ resource "aws_cloudfront_distribution" "this" {
     response_page_path    = "/index.html"
   }
 
-  restrictions { geo_restriction { restriction_type = "none" } }
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
   viewer_certificate { cloudfront_default_certificate = true }
 }
 
@@ -77,7 +82,7 @@ resource "aws_s3_bucket_policy" "this" {
       Effect    = "Allow"
       Principal = { Service = "cloudfront.amazonaws.com" }
       Action    = "s3:GetObject"
-      Resource  = "\${aws_s3_bucket.this.arn}/*"
+      Resource  = "${aws_s3_bucket.this.arn}/*"
       Condition = { StringEquals = { "AWS:SourceArn" = aws_cloudfront_distribution.this.arn } }
     }]
   })

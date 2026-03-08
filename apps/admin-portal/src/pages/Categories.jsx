@@ -7,6 +7,8 @@ import PageContainer from "../components/ui/PageContainer";
 import Modal from "../components/ui/Modal";
 import Table from "../components/ui/Table";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
+import ImageUpload from "../components/ui/ImageUpload";
+import { getPublicImageUrl } from "../lib/storage";
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
@@ -116,7 +118,7 @@ export default function Categories() {
       label: "Preview",
       render: (row) => (
         <img
-          src={row.image_url || "https://via.placeholder.com/150"}
+          src={row.image_url ? getPublicImageUrl(row.image_url) : "https://via.placeholder.com/150"}
           alt={row.name}
           className="w-12 h-12 object-cover rounded-lg border border-gray-200 shadow-xs"
         />
@@ -204,13 +206,15 @@ export default function Categories() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-          <TextField
-            label="Image URL"
+          
+          <ImageUpload
+            label="Category Image"
             value={formData.image_url}
-            onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-            placeholder="https://..."
+            onChange={(key) => setFormData({ ...formData, image_url: key })}
+            prefix="categories"
           />
-          <div className="flex gap-3 justify-end">
+
+          <div className="flex gap-3 justify-end pt-4">
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>

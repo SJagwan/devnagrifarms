@@ -11,7 +11,8 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = "devnagri"
   default_tags {
     tags = { Project = var.project_name, Environment = var.environment, ManagedBy = "Terraform" }
   }
@@ -41,6 +42,7 @@ module "rds" {
   app_security_group_id = module.ec2.ec2_security_group_id
   db_username           = var.db_username
   db_password           = var.db_password
+  db_name               = var.db_name
 }
 
 module "frontend" {
@@ -56,4 +58,11 @@ module "github_oidc" {
   github_repo                 = var.github_repo
   s3_bucket_arn               = module.frontend.s3_bucket_arn
   cloudfront_distribution_arn = module.frontend.cloudfront_distribution_arn
+}
+
+module "s3_uploads" {
+  source               = "../../modules/s3_uploads"
+  project_name         = var.project_name
+  environment          = var.environment
+  cors_allowed_origins = ["*"] # Consider restricting to your exact frontend domain in production
 }
