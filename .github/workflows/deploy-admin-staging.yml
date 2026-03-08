@@ -5,6 +5,7 @@ on:
     branches: [ staging ]
     paths:
       - 'apps/admin-portal/**'
+      - '.github/workflows/deploy-admin-staging.yml'
 
 jobs:
   deploy:
