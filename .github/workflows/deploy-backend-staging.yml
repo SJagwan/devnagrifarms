@@ -22,7 +22,7 @@ jobs:
           host: ${{ secrets.STAGING_EC2_HOST_IP }}
           username: ubuntu
           key: ${{ secrets.STAGING_EC2_SSH_PRIVATE_KEY }}
-          source: "backend/Dockerfile,backend/docker-compose.yml,backend/package.json,backend/package-lock.json,backend/server.js,backend/.sequelizerc,backend/src/**"
+          source: "backend/**,!backend/node_modules/**"
           target: "/home/ubuntu/app/staging"
 
       - name: SSH into EC2 and restart Docker Containers
@@ -33,6 +33,9 @@ jobs:
           key: ${{ secrets.STAGING_EC2_SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/app/staging/backend
+            
+            # Debug: List files to verify SCP worked
+            ls -la
             
             # Create the .env file dynamically from GitHub Secrets
             echo "NODE_ENV=staging" > .env
