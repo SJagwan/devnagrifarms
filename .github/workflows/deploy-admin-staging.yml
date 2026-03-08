@@ -37,7 +37,8 @@ jobs:
       - name: Build Application
         run: npm run build
         env:
-          VITE_API_URL: ${{ secrets.STAGING_VITE_API_URL }}
+          VITE_API_BASE_URL: ${{ secrets.STAGING_VITE_API_URL }}
+          VITE_CDN_BASE_URL: ${{ secrets.STAGING_UPLOADS_PUBLIC_URL }}
 
       - name: Configure AWS Credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
