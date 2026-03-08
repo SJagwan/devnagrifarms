@@ -49,7 +49,7 @@ module "frontend" {
   source         = "../../modules/s3_cloudfront"
   project_name   = var.project_name
   environment    = var.environment
-  backend_domain = module.ec2.ec2_public_ip
+  backend_domain = module.ec2.ec2_public_dns
 }
 
 module "github_oidc" {

@@ -12,10 +12,10 @@ import PolygonMapEditor from "../components/ui/PolygonMapEditor";
 export default function ServiceableAreas() {
   const [areas, setAreas] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
-  const [queryState, setQueryState] = useState({ page: 1, limit: 10 });
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingArea, setEditingArea] = useState(null);
+  const [lastQuery, setLastQuery] = useState({ page: 1, limit: 10 });
   const [deleteConfirm, setDeleteConfirm] = useState({
     open: false,
     area: null,
@@ -25,10 +25,6 @@ export default function ServiceableAreas() {
     coordinates: "",
     is_active: true,
   });
-
-  useEffect(() => {
-    fetchAreas(queryState);
-  }, [queryState]);
 
   const fetchAreas = async (query) => {
     try {
@@ -51,7 +47,8 @@ export default function ServiceableAreas() {
   };
 
   const handleTableQueryChange = (query) => {
-    setQueryState(query);
+    setLastQuery(query);
+    fetchAreas(query);
   };
 
   const handleChange = (field, value) => {
@@ -97,7 +94,7 @@ export default function ServiceableAreas() {
       setShowModal(false);
       setForm({ name: "", coordinates: null, is_active: true });
       setEditingArea(null);
-      setQueryState((prev) => ({ ...prev, page: 1 }));
+      fetchAreas(lastQuery);
     } catch (e) {
       console.error("Failed to save serviceable area", e);
     } finally {
@@ -115,7 +112,7 @@ export default function ServiceableAreas() {
       setLoading(true);
       await adminAPI.deleteServiceableArea(deleteConfirm.area.id);
       setDeleteConfirm({ open: false, area: null });
-      fetchAreas(queryState);
+      fetchAreas(lastQuery);
     } catch (e) {
       console.error("Failed to delete serviceable area", e);
     } finally {
@@ -276,7 +273,7 @@ export default function ServiceableAreas() {
       <ConfirmDialog
         isOpen={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, area: null })}
-        onConfirm={handleDeleteConfirm}
+        onConfirm={() => handleDeleteConfirm()}
         title="Delete Serviceable Area"
         message={`Are you sure you want to delete "${deleteConfirm.area?.name}"? This action cannot be undone.`}
         confirmText="Delete"

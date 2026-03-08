@@ -13,12 +13,12 @@ import { getPublicImageUrl } from "../lib/storage";
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
-  const [queryState, setQueryState] = useState({ page: 1, limit: 10 });
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [originalFormData, setOriginalFormData] = useState(null);
+  const [lastQuery, setLastQuery] = useState({ page: 1, limit: 10 });
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -32,14 +32,16 @@ export default function Products() {
     loadCategories();
   }, []);
 
-  useEffect(() => {
-    fetchProducts(queryState);
-  }, [queryState]);
-
   const fetchProducts = async (query) => {
     try {
       setLoading(true);
-      const params = { page: query.page, limit: query.limit };
+      const params = { 
+        page: query.page, 
+        limit: query.limit,
+        q: query.search,
+        sortBy: query.sortBy,
+        sortDir: query.sortDir
+      };
       const { data } = await adminAPI.getProducts(params);
       setProducts(data.data || []);
       if (data.meta) setTotalItems(data.meta.totalItems);
@@ -97,7 +99,7 @@ export default function Products() {
       setShowCreate(false);
       setEditingProduct(null);
       setOriginalFormData(null);
-      setQueryState((prev) => ({ ...prev, page: 1 }));
+      fetchProducts(lastQuery);
     } catch (e) {
       console.error(
         editingProduct
@@ -130,6 +132,8 @@ export default function Products() {
     {
       key: "name",
       label: "Name",
+      sortable: true,
+      sortKey: "name",
       render: (row) => (
         <div>
           <div className="text-sm font-medium text-gray-900">{row.name}</div>
@@ -176,11 +180,8 @@ export default function Products() {
   ];
 
   const handleTableQueryChange = (query) => {
-    setQueryState((prev) => ({
-      ...prev,
-      page: query.page,
-      limit: query.limit,
-    }));
+    setLastQuery(query);
+    fetchProducts(query);
   };
 
   return (

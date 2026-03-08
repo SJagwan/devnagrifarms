@@ -35,38 +35,30 @@ export default function Table({
     onQueryRef.current = onQueryChange;
   }, [onQueryChange]);
 
-  const suppressImmediateRef = useRef(false);
-
+  // Combined effect handler to ensure only one query happens at a time
   useEffect(() => {
     if (typeof onQueryRef.current !== "function") return;
-    if (suppressImmediateRef.current) {
-      suppressImmediateRef.current = false;
-      return;
-    }
-    onQueryRef.current({
+
+    const queryParams = {
       page: currentPage,
       limit: rowsPerPage,
       search: searchTerm,
       filters: activeFilters,
       sortBy: sort.sortBy,
       sortDir: sort.sortDir,
-    });
-  }, [currentPage, rowsPerPage, sort]);
+    };
 
-  useEffect(() => {
-    if (typeof onQueryRef.current !== "function") return;
+    // Determine if we should debounce (only for searching/filtering)
+    const isSearching = searchTerm.length > 0;
+    const isFiltering = Object.keys(activeFilters).length > 0;
+    const delay = (isSearching || isFiltering) ? 350 : 0;
+
     const handle = setTimeout(() => {
-      onQueryRef.current({
-        page: currentPage,
-        limit: rowsPerPage,
-        search: searchTerm,
-        filters: activeFilters,
-        sortBy: sort.sortBy,
-        sortDir: sort.sortDir,
-      });
-    }, 350);
+      onQueryRef.current(queryParams);
+    }, delay);
+
     return () => clearTimeout(handle);
-  }, [searchTerm, activeFilters, currentPage, rowsPerPage, sort]);
+  }, [currentPage, rowsPerPage, sort, searchTerm, activeFilters]);
 
   // Pagination
   const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;

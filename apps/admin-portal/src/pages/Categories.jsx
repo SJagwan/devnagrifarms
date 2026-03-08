@@ -33,9 +33,16 @@ export default function Categories() {
     category: null,
   });
 
-  const loadCategories = async (params = {}) => {
+  const fetchCategories = async (query) => {
     try {
       setLoading(true);
+      const params = {
+        page: query.page,
+        limit: query.limit,
+        q: query.search || "",
+        sortBy: query.sortBy || "name",
+        sortDir: query.sortDir || "ASC",
+      };
       const { data } = await adminAPI.getCategories(params);
       setCategories(data.data || []);
       const meta = data.meta || { total: (data.data || []).length };
@@ -59,8 +66,9 @@ export default function Categories() {
       setFormData({ name: "", description: "", image_url: "" });
       setShowForm(false);
       setEditingId(null);
-      loadCategories(lastQuery);
+      fetchCategories(lastQuery);
     } catch (error) {
+      console.error("Failed to save category:", error);
     } finally {
       setLoading(false);
     }
@@ -81,7 +89,7 @@ export default function Categories() {
     try {
       await adminAPI.deleteCategory(id);
       setDeleteConfirm({ isOpen: false, category: null });
-      loadCategories(lastQuery);
+      fetchCategories(lastQuery);
     } catch (error) {
       alert(error.message || "Failed to delete category");
     } finally {
@@ -100,16 +108,8 @@ export default function Categories() {
   };
 
   const handleTableQueryChange = (query) => {
-    const { page, limit, search, sortBy, sortDir } = query;
-    const params = {
-      page,
-      limit,
-      q: search || "",
-      sortBy: sortBy || "name",
-      sortDir: sortDir || "ASC",
-    };
-    setLastQuery(params);
-    loadCategories(params);
+    setLastQuery(query);
+    fetchCategories(query);
   };
 
   const columns = [
@@ -232,6 +232,7 @@ export default function Categories() {
         totalItems={total}
         loading={loading}
         enableSorting
+        enableSearch
         emptyMessage="No categories yet. Click 'Add Category' to create one."
       />
 

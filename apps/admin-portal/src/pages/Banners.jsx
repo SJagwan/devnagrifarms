@@ -39,9 +39,14 @@ export default function Banners() {
     banner: null,
   });
 
-  const loadBanners = async (params = {}) => {
+  const fetchBanners = async (query) => {
     try {
       setLoading(true);
+      const params = {
+        page: query.page,
+        limit: query.limit,
+        search: query.search || "",
+      };
       const { data } = await adminAPI.getBanners(params);
       setBanners(data.data?.items || []);
       setTotal(data.data?.meta?.totalItems || 0);
@@ -69,7 +74,7 @@ export default function Banners() {
         await adminAPI.createBanner(payload);
       }
       handleCancel();
-      loadBanners(lastQuery);
+      fetchBanners(lastQuery);
     } catch (error) {
       console.error("Failed to save banner:", error);
     } finally {
@@ -100,7 +105,7 @@ export default function Banners() {
     try {
       await adminAPI.deleteBanner(id);
       setDeleteConfirm({ isOpen: false, banner: null });
-      loadBanners(lastQuery);
+      fetchBanners(lastQuery);
     } catch (error) {
       alert(error.message || "Failed to delete banner");
     } finally {
@@ -127,13 +132,8 @@ export default function Banners() {
   };
 
   const handleTableQueryChange = (query) => {
-    const params = {
-      page: query.page,
-      limit: query.limit,
-      search: query.search || "",
-    };
-    setLastQuery(params);
-    loadBanners(params);
+    setLastQuery(query);
+    fetchBanners(query);
   };
 
   const columns = [
