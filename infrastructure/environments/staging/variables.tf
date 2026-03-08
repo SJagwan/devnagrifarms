@@ -11,5 +11,5 @@ variable "db_name" {
 }
 variable "github_repo" { 
   description = "The GitHub repository in format organization/repository (e.g. my-org/my-repo)"
-  default     = "sjagwan/devnagrifarms" 
+  default     = "SJagwan/devnagrifarms" 
 }
