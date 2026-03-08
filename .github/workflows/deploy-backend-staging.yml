@@ -21,7 +21,7 @@ jobs:
           host: ${{ secrets.STAGING_EC2_HOST_IP }}
           username: ubuntu
           key: ${{ secrets.STAGING_EC2_SSH_PRIVATE_KEY }}
-          source: "backend/*,backend/.*"
+          source: "backend/Dockerfile,backend/docker-compose.yml,backend/package.json,backend/package-lock.json,backend/server.js,backend/.sequelizerc,backend/src/**"
           target: "/home/ubuntu/app/staging"
 
       - name: SSH into EC2 and restart Docker Containers
