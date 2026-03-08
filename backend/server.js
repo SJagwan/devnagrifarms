@@ -1,4 +1,5 @@
 const dotenv = require("dotenv");
+// Server initialization
 const app = require("./src/app");
 const logger = require("./src/config/logger");
 const db = require("./src/models");
