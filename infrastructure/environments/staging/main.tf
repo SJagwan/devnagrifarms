@@ -46,9 +46,10 @@ module "rds" {
 }
 
 module "frontend" {
-  source       = "../../modules/s3_cloudfront"
-  project_name = var.project_name
-  environment  = var.environment
+  source         = "../../modules/s3_cloudfront"
+  project_name   = var.project_name
+  environment    = var.environment
+  backend_domain = module.ec2.ec2_public_ip
 }
 
 module "github_oidc" {
