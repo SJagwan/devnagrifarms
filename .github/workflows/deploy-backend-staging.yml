@@ -44,9 +44,11 @@ jobs:
             echo "DB_USER=${{ secrets.STAGING_DB_USER }}" >> .env
             echo "DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}" >> .env
             echo "DB_NAME=${{ secrets.STAGING_DB_NAME }}" >> .env
-            echo "JWT_SECRET=${{ secrets.STAGING_JWT_SECRET }}" >> .env
+            echo "ACCESS_TOKEN_SECRET=${{ secrets.STAGING_ACCESS_TOKEN_SECRET }}" >> .env
+            echo "REFRESH_TOKEN_SECRET=${{ secrets.STAGING_REFRESH_TOKEN_SECRET }}" >> .env
             echo "RAZORPAY_KEY_ID=${{ secrets.STAGING_RAZORPAY_KEY_ID }}" >> .env
             echo "RAZORPAY_KEY_SECRET=${{ secrets.STAGING_RAZORPAY_KEY_SECRET }}" >> .env
+            echo "CRON_SECRET=${{ secrets.STAGING_CRON_SECRET }}" >> .env
             echo "AWS_REGION=${{ secrets.STAGING_AWS_REGION }}" >> .env
             echo "AWS_S3_BUCKET=${{ secrets.STAGING_UPLOADS_BUCKET_NAME }}" >> .env
             echo "AWS_ACCESS_KEY_ID=${{ secrets.STAGING_BACKEND_S3_ACCESS_KEY }}" >> .env

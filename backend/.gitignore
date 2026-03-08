@@ -44,9 +44,9 @@ sequelize.log
 .aws/
 .dockerignore
 docker-compose.override.yml
-docker-compose*.yaml
-docker-compose*.yml
-Dockerfile
+# docker-compose*.yaml
+# docker-compose*.yml
+# Dockerfile
 *.pem
 
 # Local database files
