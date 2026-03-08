@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { getPublicImageUrl } from "../../../lib/storage";
 
 export default function CategoryList({
   categories,
@@ -26,7 +27,7 @@ export default function CategoryList({
             <View className="w-20 h-20 bg-white rounded-2xl items-center justify-center border border-gray-100 mb-2 shadow-sm overflow-hidden">
               {cat.image_url ? (
                 <Image
-                  source={{ uri: cat.image_url }}
+                  source={{ uri: getPublicImageUrl(cat.image_url) }}
                   className="w-full h-full"
                   resizeMode="cover"
                 />

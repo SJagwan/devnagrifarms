@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { customerAPI } from "@lib/api";
 import { useCart } from "@context/CartContext";
 import { useAuth } from "@context/AuthContext";
+import { getPublicImageUrl } from "../../../lib/storage";
 
 export default function ProductVariantScreen() {
   const { id } = useLocalSearchParams();
@@ -284,7 +285,7 @@ export default function ProductVariantScreen() {
         <View className="h-64 bg-gray-100 relative">
           <Image
             source={{ 
-              uri: product.image_url || variants[0]?.images?.[0]?.url || "https://via.placeholder.com/600" 
+              uri: getPublicImageUrl(product.image_url || variants[0]?.images?.[0]?.url) || "https://via.placeholder.com/600" 
             }}
             className="w-full h-full"
             resizeMode="cover"

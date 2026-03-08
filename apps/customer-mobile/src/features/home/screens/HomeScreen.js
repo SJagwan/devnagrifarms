@@ -17,6 +17,7 @@ import LocationSelectorSheet from "@features/home/components/LocationSelectorShe
 
 import { useCart } from "../../../context/CartContext";
 import { customerAPI } from "../../../lib/api";
+import { getPublicImageUrl } from "../../../lib/storage";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -45,7 +46,8 @@ export default function HomeScreen() {
         // Find default variant or first variant representing the product
         const defaultVariant =
           p.variants?.find((v) => v.is_default) || p.variants?.[0] || {};
-        const image = p.image_url || defaultVariant.images?.[0]?.url || "https://via.placeholder.com/400";
+        const rawImage = p.image_url || defaultVariant.images?.[0]?.url;
+        const image = getPublicImageUrl(rawImage) || "https://via.placeholder.com/400";
 
         // Attach product details to the variant so CartContext has full context
         const fullVariant = {

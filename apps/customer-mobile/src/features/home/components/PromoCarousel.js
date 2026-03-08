@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { api } from "../../../lib/api";
+import { getPublicImageUrl } from "../../../lib/storage";
 
 const { width } = Dimensions.get("window");
 const ITEM_WIDTH = width - 32;
@@ -88,7 +89,7 @@ export default function PromoCarousel({ onBannerPress }) {
           {/* Background Image */}
           <View className="absolute inset-0 z-0">
             <Image
-              source={{ uri: item.image_url }}
+              source={{ uri: getPublicImageUrl(item.image_url) }}
               className="w-full h-full object-cover"
             />
             {/* Elegant Gradient Overlay - Standard dark tint for readability */}

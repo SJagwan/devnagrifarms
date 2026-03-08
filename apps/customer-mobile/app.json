@@ -15,7 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.customermobile"
+      "bundleIdentifier": "com.anonymous.customermobile",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow Devnagri Farms to access your photos to upload profile pictures and product reviews.",
+        "NSCameraUsageDescription": "Allow Devnagri Farms to take photos for your profile picture."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,7 +33,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Devnagri Farms to access your photos to upload profile pictures and product reviews.",
+          "cameraPermission": "Allow Devnagri Farms to take photos for your profile picture."
+        }
+      ]
     ]
   }
 }
