@@ -41,6 +41,11 @@
           "cameraPermission": "Allow Devnagri Farms to take photos for your profile picture."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "18bc2f5f-86c2-488d-a8bc-e00e441e777b"
+      }
+    }
   }
 }

@@ -143,7 +143,9 @@ const requestOTP = async (phone, userType) => {
   if (!userType) throw new Error("User type is required");
 
   // Generate 6 digit OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  // TODO: Remove hardcoded OTP '111111' and uncomment random generation for production
+  // const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otp = "111111";
   const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
   // Check if user exists

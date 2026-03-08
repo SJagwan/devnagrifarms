@@ -1,7 +1,6 @@
 {
   "cli": {
-    "version": ">= 12.0.0",
-    "appExtensions": []
+    "version": ">= 12.0.0"
   },
   "build": {
     "development": {
@@ -21,7 +20,7 @@
       },
       "env": {
         "APP_ENV": "staging",
-        "EXPO_PUBLIC_API_URL": "https://dxxxxx.cloudfront.net/api",
+        "EXPO_PUBLIC_API_URL": "https://d10kr0wsoouzco.cloudfront.net/api",
         "EXPO_PUBLIC_CDN_BASE_URL": "https://devnagrifarms-staging-uploads-16wvjo.s3.ap-south-1.amazonaws.com"
       }
     },
