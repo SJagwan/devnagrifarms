@@ -1,3 +1,19 @@
+resource "tls_private_key" "this" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "this" {
+  key_name   = "${var.project_name}-${var.environment}-key"
+  public_key = tls_private_key.this.public_key_openssh
+}
+
+resource "local_sensitive_file" "private_key" {
+  content         = tls_private_key.this.private_key_pem
+  filename        = "${path.module}/../../../${var.project_name}-${var.environment}-key.pem"
+  file_permission = "0400"
+}
+
 resource "aws_security_group" "ec2" {
   name        = "${var.project_name}-${var.environment}-ec2-sg"
   description = "Allow HTTP/HTTPS and SSH inbound traffic"
@@ -49,6 +65,7 @@ data "aws_ami" "ubuntu" {
 resource "aws_instance" "app_server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro" # Free Tier eligible
+  key_name      = aws_key_pair.this.key_name
 
   # Place in the first public subnet
   subnet_id                   = var.public_subnet_ids[0]

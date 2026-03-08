@@ -1,13 +1,8 @@
 # ------------------------------------------------------------------------------
 # GitHub OIDC Provider (If not already created in the account)
 # ------------------------------------------------------------------------------
-data "aws_iam_openid_connect_provider" "github" {
-  url = "https://token.actions.githubusercontent.com"
-}
 
 # If the OIDC provider does not exist yet, you can create it. 
-# We use a trick to gracefully handle if it exists or not by trying to fetch it.
-# However, for simplicity in Terraform, if it's the first time, we create it.
 resource "aws_iam_openid_connect_provider" "github" {
   # We use count to conditionally create if it's not managed globally
   count           = var.create_oidc_provider ? 1 : 0
@@ -16,8 +11,13 @@ resource "aws_iam_openid_connect_provider" "github" {
   thumbprint_list = ["1b511abead59c6ce207077c0bf0e0043b1382612"] # Valid thumbprint for GitHub Actions
 }
 
+data "aws_iam_openid_connect_provider" "github" {
+  count = var.create_oidc_provider ? 0 : 1
+  url   = "https://token.actions.githubusercontent.com"
+}
+
 locals {
-  github_oidc_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github.arn
+  github_oidc_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn
 }
 
 # ------------------------------------------------------------------------------
@@ -83,3 +83,4 @@ resource "aws_iam_role_policy" "frontend_deploy" {
     ]
   })
 }
+

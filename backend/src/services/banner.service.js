@@ -1,5 +1,6 @@
 const bannerRepo = require("../repositories/banner.repository");
 const AppError = require("../utils/AppError");
+const storageService = require("./storage.service");
 
 const getActiveBanners = async (position) => {
   return await bannerRepo.getActiveBanners(position);
@@ -39,14 +40,29 @@ const createBanner = async (data) => {
 };
 
 const updateBanner = async (id, data) => {
+  const existing = await bannerRepo.getBannerById(id);
   const success = await bannerRepo.updateBanner(id, data);
   if (!success) throw new AppError("Banner not found", 404);
+
+  // Cleanup old image if it changed
+  if (data.image_url && existing.image_url && data.image_url !== existing.image_url) {
+    await storageService.deleteObjectByUrl(existing.image_url);
+  } else if (data.image_url === "" && existing.image_url) {
+    await storageService.deleteObjectByUrl(existing.image_url);
+  }
+
   return await bannerRepo.getBannerById(id);
 };
 
 const deleteBanner = async (id) => {
+  const existing = await bannerRepo.getBannerById(id);
   const success = await bannerRepo.deleteBanner(id);
   if (!success) throw new AppError("Banner not found", 404);
+
+  if (existing?.image_url) {
+    await storageService.deleteObjectByUrl(existing.image_url);
+  }
+
   return true;
 };
 

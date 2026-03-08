@@ -1,9 +1,13 @@
-import { View, Text, ScrollView, Pressable, Alert, Image } from "react-native";
+import { useState } from "react";
+import { View, Text, ScrollView, Pressable, Alert, Image, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, Stack } from "expo-router";
 import { useAuth } from "@context/AuthContext";
 import { LinearGradient } from "expo-linear-gradient";
 import Button from "@shared/components/Button";
+import * as ImagePicker from "expo-image-picker";
+import { presignAndUpload, getPublicImageUrl } from "../../../lib/storage";
+import api from "../../../lib/apiClient";
 
 const MENU_SECTIONS = [
   {
@@ -61,7 +65,8 @@ const MENU_SECTIONS = [
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -91,6 +96,50 @@ export default function AccountScreen() {
     Alert.alert("Coming Soon", "This feature will be available soon!");
   };
 
+  const handleUpdateAvatar = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert("Permission Required", "You need to allow access to your photos to update your profile picture.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled) return;
+
+      const asset = result.assets[0];
+      setIsUploading(true);
+
+      const { key } = await presignAndUpload({
+        fileUri: asset.uri,
+        fileName: asset.fileName || asset.uri.split('/').pop() || 'avatar.jpg',
+        mimeType: asset.mimeType || "image/jpeg",
+      });
+
+      const publicUrl = getPublicImageUrl(key);
+
+      await api.put("/profile", {
+        first_name: user?.first_name || user?.name?.split(' ')[0] || "Customer",
+        last_name: user?.last_name || user?.name?.split(' ').slice(1).join(' ') || "",
+        avatar_url: publicUrl,
+      });
+
+      await refreshUser();
+      Alert.alert("Success", "Profile picture updated successfully!");
+    } catch (error) {
+      console.error("Upload error:", error);
+      Alert.alert("Error", error.message || "Failed to update profile picture");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <View className="flex-1 bg-gray-50">
       <Stack.Screen options={{ headerTitle: "Account", headerTitleStyle: { fontWeight: '900' } }} />
@@ -106,7 +155,11 @@ export default function AccountScreen() {
               className="p-6"
             >
               <View className="flex-row items-center">
-                <View className="w-20 h-20 rounded-2xl bg-white/20 items-center justify-center border border-white/30 backdrop-blur-md overflow-hidden">
+                <Pressable 
+                  onPress={handleUpdateAvatar}
+                  disabled={isUploading}
+                  className="w-20 h-20 rounded-2xl bg-white/20 items-center justify-center border border-white/30 backdrop-blur-md overflow-hidden relative"
+                >
                   {user?.avatar_url ? (
                     <Image 
                       source={{ uri: user.avatar_url }} 
@@ -116,7 +169,17 @@ export default function AccountScreen() {
                   ) : (
                     <Ionicons name="person" size={40} color="white" />
                   )}
-                </View>
+                  {isUploading && (
+                    <View className="absolute inset-0 bg-black/50 items-center justify-center">
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    </View>
+                  )}
+                  {!isUploading && (
+                    <View className="absolute bottom-0 w-full bg-black/40 py-1 items-center justify-center">
+                      <Text className="text-[8px] text-white font-bold uppercase tracking-widest">Edit</Text>
+                    </View>
+                  )}
+                </Pressable>
                 <View className="ml-5 flex-1">
                   <Text className="text-2xl font-black text-white tracking-tight">
                     {user?.name || "Customer"}

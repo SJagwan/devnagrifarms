@@ -4,6 +4,11 @@ variable "environment" { default = "staging" }
 variable "vpc_cidr" { default = "10.0.0.0/16" }
 variable "db_username" { default = "admin" }
 variable "db_password" { sensitive = true }
+variable "db_name" {
+  description = "Database name"
+  type        = string
+  default     = "devnagrifarms_staging"
+}
 variable "github_repo" { 
   description = "The GitHub repository in format organization/repository (e.g. my-org/my-repo)"
   default     = "sjagwan/devnagrifarms" 

@@ -43,9 +43,9 @@ async function initializeInventory(variantId) {
 async function replaceVariantImages(variantId, newImages) {
   // Get existing images
   const existing = await variantRepo.getVariantById(variantId);
-  const oldKeys = (existing?.images || [])
+  const oldUrls = (existing?.images || [])
     .map((img) => img.url)
-    .filter((k) => k);
+    .filter((u) => u);
 
   // Delete old DB records
   await ProductVariantImage.destroy({
@@ -59,12 +59,12 @@ async function replaceVariantImages(variantId, newImages) {
   }
 
   // Delete old S3 objects (if not in new list)
-  const toDelete = oldKeys.filter((k) => !normalized.includes(k));
-  for (const key of toDelete) {
+  const toDelete = oldUrls.filter((u) => !normalized.includes(u));
+  for (const url of toDelete) {
     try {
-      await storageService.deleteObject(key);
+      await storageService.deleteObjectByUrl(url);
     } catch (err) {
-      console.error(`Failed to delete S3 object ${key}:`, err.message);
+      console.error(`Failed to delete S3 object ${url}:`, err.message);
     }
   }
 
@@ -140,11 +140,29 @@ const createProduct = async (productData) => {
 };
 
 const updateProduct = async (id, data) => {
-  return await productRepo.updateProduct(id, data);
+  const existing = await productRepo.getProductById(id);
+  const result = await productRepo.updateProduct(id, data);
+  
+  // Cleanup old image if it changed
+  if (data.image_url && existing.image_url && data.image_url !== existing.image_url) {
+    await storageService.deleteObjectByUrl(existing.image_url);
+  } else if (data.image_url === "" && existing.image_url) {
+    // Explicit removal
+    await storageService.deleteObjectByUrl(existing.image_url);
+  }
+  
+  return result;
 };
 
 const deleteProduct = async (id) => {
-  return await productRepo.deleteProduct(id);
+  const existing = await productRepo.getProductById(id);
+  const result = await productRepo.deleteProduct(id);
+  
+  if (existing?.image_url) {
+    await storageService.deleteObjectByUrl(existing.image_url);
+  }
+  
+  return result;
 };
 
 const listVariants = async (productId, query) => {
@@ -340,19 +358,19 @@ const updateVariant = async (variantId, data) => {
 const deleteVariant = async (variantId) => {
   // Get variant images before deletion
   const variant = await variantRepo.getVariantById(variantId);
-  const imageKeys = (variant?.images || [])
+  const imageUrls = (variant?.images || [])
     .map((img) => img.url)
-    .filter((k) => k);
+    .filter((u) => u);
 
   // Delete variant (cascade deletes images from DB)
   await variantRepo.deleteVariant(variantId);
 
   // Delete S3 objects
-  for (const key of imageKeys) {
+  for (const url of imageUrls) {
     try {
-      await storageService.deleteObject(key);
+      await storageService.deleteObjectByUrl(url);
     } catch (err) {
-      console.error(`Failed to delete S3 object ${key}:`, err.message);
+      console.error(`Failed to delete S3 object ${url}:`, err.message);
     }
   }
 
