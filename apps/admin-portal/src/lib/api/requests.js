@@ -8,6 +8,9 @@ export const authAPI = {
 };
 
 export const adminAPI = {
+  // Dashboard
+  getDashboardStats: () => api.get("/admin/dashboard/stats"),
+
   // Wallet & Finance
   getWalletTransactions: (params = {}) => api.get("/admin/wallet/transactions", { params }),
   getUserPassbook: (userId, params = {}) => api.get(`/admin/users/${userId}/wallet/passbook`, { params }),

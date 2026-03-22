@@ -14,6 +14,7 @@ const subscriptionController = require("../controllers/subscription.controller")
 const userController = require("../controllers/user.controller");
 const walletController = require("../controllers/wallet.controller");
 const bannerController = require("../controllers/banner.controller");
+const dashboardController = require("../controllers/dashboard.controller");
 const bannerValidation = require("../validations/banner.validation");
 
 const isAdmin = (req, res, next) => {
@@ -28,9 +29,7 @@ const isAdmin = (req, res, next) => {
 
 router.use(authenticate, isAdmin);
 
-router.get("/dashboard/stats", (req, res) => {
-  res.json({ success: true, message: "Admin dashboard stats" });
-});
+router.get("/dashboard/stats", dashboardController.getStats);
 
 // User management
 router.get("/users", userController.getUsers);
