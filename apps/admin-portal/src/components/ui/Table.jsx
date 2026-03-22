@@ -67,13 +67,11 @@ export default function Table({
   const paginatedData = data;
 
   const handleSearch = (value) => {
-    suppressImmediateRef.current = true;
     setSearchTerm(value);
     setCurrentPage(1);
   };
 
   const handleFilterChange = (filterKey, value) => {
-    suppressImmediateRef.current = true;
     setActiveFilters((prev) => {
       const updated = { ...prev };
       if (value === "" || value === null) {
@@ -125,7 +123,7 @@ export default function Table({
               <select
                 value={activeFilters[filter.key] || ""}
                 onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm cursor-pointer"
               >
                 <option value="">{filter.label}</option>
                 {filter.options.map((option) => (
@@ -244,7 +242,7 @@ export default function Table({
                 <select
                   value={rowsPerPage}
                   onChange={(e) => handleRowsPerPageChange(e.target.value)}
-                  className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
                 >
                   {rowsPerPageOptions.map((option) => (
                     <option key={option} value={option}>

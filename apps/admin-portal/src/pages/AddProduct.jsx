@@ -40,8 +40,8 @@ export default function AddProduct() {
     try {
       const { data } = await adminAPI.getCategories();
       setCategories(data.data || []);
-    } catch (error) {
-      console.error("Failed to load categories:", error);
+    } catch {
+      // Interceptor handles error toast
     }
   };
 
@@ -85,7 +85,6 @@ export default function AddProduct() {
     setLoading(true);
     try {
       await adminAPI.createProduct({ ...product, variants });
-      alert("Product created successfully!");
       // Reset form
       setProduct({
         name: "",
@@ -110,8 +109,8 @@ export default function AddProduct() {
           images: [],
         },
       ]);
-    } catch (error) {
-      alert(error.message || "Failed to create product");
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -150,7 +149,7 @@ export default function AddProduct() {
                   handleProductChange("category_id", e.target.value)
                 }
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
               >
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
@@ -195,7 +194,6 @@ export default function AddProduct() {
               type="button"
               onClick={addVariant}
               size="sm"
-              variant="secondary"
             >
               + Add Variant
             </Button>
@@ -214,7 +212,7 @@ export default function AddProduct() {
                   <button
                     type="button"
                     onClick={() => removeVariant(index)}
-                    className="text-red-600 hover:text-red-700 text-sm"
+                    className="text-red-600 hover:text-red-700 text-sm cursor-pointer"
                   >
                     Remove
                   </button>
@@ -265,7 +263,7 @@ export default function AddProduct() {
                     onChange={(e) =>
                       handleVariantChange(index, "unit", e.target.value)
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
                   >
                     <option value="pcs">Pieces</option>
                     <option value="g">Grams</option>
@@ -345,9 +343,9 @@ export default function AddProduct() {
                           e.target.checked
                         )
                       }
-                      className="mr-2"
+                      className="mr-2 cursor-pointer"
                     />
-                    <span className="text-sm text-gray-700">Active</span>
+                    <span className="text-sm text-gray-700 cursor-pointer">Active</span>
                   </label>
                 </div>
               </div>

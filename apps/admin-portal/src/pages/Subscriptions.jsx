@@ -1,28 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSubscriptions } from "../lib/api/subscriptions";
+import { adminAPI } from "../lib/api/requests";
 import PageHeader from "../components/ui/PageHeader";
 import PageContainer from "../components/ui/PageContainer";
 import Button from "../components/ui/Button";
 import Table from "../components/ui/Table";
-
-const STATUS_COLORS = {
-  active: "bg-green-100 text-green-800",
-  paused: "bg-yellow-100 text-yellow-800",
-  cancelled: "bg-red-100 text-red-800",
-};
-
-const SCHEDULE_MAP = {
-  d: "Daily",
-  a: "Alternate Days",
-  w: "Weekly",
-};
-
-const STATUS_OPTIONS = [
-  { label: "Active", value: "active" },
-  { label: "Paused", value: "paused" },
-  { label: "Cancelled", value: "cancelled" },
-];
+import { SUBSCRIPTION_STATUS_COLORS, SUBSCRIPTION_STATUS_OPTIONS, SCHEDULE_MAP } from "../lib/constants";
 
 export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -39,12 +22,12 @@ export default function Subscriptions() {
         status: query.filters?.status || undefined,
         search: query.search || undefined,
       };
-      const response = await getSubscriptions(params);
+      const response = await adminAPI.getSubscriptions(params);
       const { items, meta } = response.data.data;
       setSubscriptions(items || []);
       if (meta) setTotalItems(meta.totalItems);
-    } catch (err) {
-      console.error("Failed to load subscriptions", err);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -87,7 +70,7 @@ export default function Subscriptions() {
       render: (row) => (
         <span
           className={`px-2 py-1 rounded-full text-xs font-semibold capitalize ${
-            STATUS_COLORS[row.status] || "bg-gray-100 text-gray-800"
+            SUBSCRIPTION_STATUS_COLORS[row.status] || "bg-gray-100 text-gray-800"
           }`}
         >
           {row.status}
@@ -122,7 +105,7 @@ export default function Subscriptions() {
     {
       key: "status",
       label: "Filter by Status",
-      options: STATUS_OPTIONS,
+      options: SUBSCRIPTION_STATUS_OPTIONS,
     },
   ];
 

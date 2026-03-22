@@ -11,7 +11,10 @@ export const adminAPI = {
   // Wallet & Finance
   getWalletTransactions: (params = {}) => api.get("/admin/wallet/transactions", { params }),
   getUserPassbook: (userId, params = {}) => api.get(`/admin/users/${userId}/wallet/passbook`, { params }),
-  manualWalletAdjustment: (userId, payload) => api.post(`/admin/users/${userId}/wallet/adjustment`, payload),
+  manualWalletAdjustment: (userId, payload) =>
+    api.post(`/admin/users/${userId}/wallet/adjustment`, payload, {
+      meta: { successMessage: "Wallet adjusted successfully" },
+    }),
 
   // Categories
   getCategories: (params = {}) => api.get("/admin/categories", { params }),
@@ -78,7 +81,14 @@ export const adminAPI = {
   // Users
   getUsers: (params = {}) => api.get("/admin/users", { params }),
   getUser: (id) => api.get(`/admin/users/${id}`),
-  updateUserStatus: (id, status) => api.patch(`/admin/users/${id}/status`, { status }),
+  updateUserStatus: (id, status) =>
+    api.patch(`/admin/users/${id}/status`, { status }, {
+      meta: { successMessage: "User status updated" },
+    }),
+  updateUserProfile: (id, payload) =>
+    api.put(`/admin/users/${id}/profile`, payload, {
+      meta: { successMessage: "Profile updated" },
+    }),
 
   // Banners
   getBanners: (params = {}) => api.get("/admin/banners", { params }),
@@ -94,5 +104,21 @@ export const adminAPI = {
   deleteBanner: (id) =>
     api.delete(`/admin/banners/${id}`, {
       meta: { successMessage: "Banner deleted" },
+    }),
+
+  // Orders
+  getOrders: (params = {}) => api.get("/admin/orders", { params }),
+  getOrder: (id) => api.get(`/admin/orders/${id}`),
+  updateOrderStatus: (id, status) =>
+    api.patch(`/admin/orders/${id}/status`, { status }, {
+      meta: { successMessage: "Order status updated" },
+    }),
+
+  // Subscriptions
+  getSubscriptions: (params = {}) => api.get("/admin/subscriptions", { params }),
+  getSubscription: (id) => api.get(`/admin/subscriptions/${id}`),
+  updateSubscriptionStatus: (id, status) =>
+    api.patch(`/admin/subscriptions/${id}/status`, { status }, {
+      meta: { successMessage: "Subscription status updated" },
     }),
 };

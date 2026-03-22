@@ -9,6 +9,23 @@ import Modal from "../components/ui/Modal";
 import TextField from "../components/ui/TextField";
 import Table from "../components/ui/Table";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
+import { UNIT_OPTIONS, VARIANT_STATUS_OPTIONS } from "../lib/constants";
+
+const INITIAL_VARIANT_FORM = {
+  sku: "",
+  type: "",
+  source: "",
+  quantity: "1",
+  unit: "pcs",
+  bottle_option: "",
+  price: "",
+  mrp: "",
+  discount_percent: "",
+  min_order_qty: "1",
+  max_order_qty: "",
+  is_active: true,
+  images: [],
+};
 
 export default function ProductVariants() {
   const { id } = useParams();
@@ -34,21 +51,7 @@ export default function ProductVariants() {
   const [editingVariant, setEditingVariant] = useState(null);
   const [originalFormData, setOriginalFormData] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
-  const [variantForm, setVariantForm] = useState({
-    sku: "",
-    type: "",
-    source: "",
-    quantity: "1",
-    unit: "pcs",
-    bottle_option: "",
-    price: "",
-    mrp: "",
-    discount_percent: "",
-    min_order_qty: "1",
-    max_order_qty: "",
-    is_active: true,
-    images: [],
-  });
+  const [variantForm, setVariantForm] = useState(INITIAL_VARIANT_FORM);
 
   useEffect(() => {
     loadProduct();
@@ -60,8 +63,8 @@ export default function ProductVariants() {
       setLoading(true);
       const { data } = await adminAPI.getProduct(id);
       setProduct(data.data || null);
-    } catch (e) {
-      console.error("Failed to load product", e);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -75,21 +78,7 @@ export default function ProductVariants() {
     setEditingVariant(null);
     setOriginalFormData(null);
     setImageFiles([]);
-    setVariantForm({
-      sku: "",
-      type: "",
-      source: "",
-      quantity: "1",
-      unit: "pcs",
-      bottle_option: "",
-      price: "",
-      mrp: "",
-      discount_percent: "",
-      min_order_qty: "1",
-      max_order_qty: "",
-      is_active: true,
-      images: [],
-    });
+    setVariantForm(INITIAL_VARIANT_FORM);
     setShowVariantModal(true);
   };
 
@@ -132,8 +121,8 @@ export default function ProductVariants() {
       const { data } = await adminAPI.getProductVariants(id, params);
       setVariants(data.data || []);
       if (data.meta) setTotalItems(data.meta.totalItems);
-    } catch (e) {
-      console.error("Failed to load variants", e);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -169,30 +158,11 @@ export default function ProductVariants() {
       setEditingVariant(null);
       setOriginalFormData(null);
       setImageFiles([]);
-      setVariantForm({
-        sku: "",
-        type: "",
-        source: "",
-        quantity: "1",
-        unit: "pcs",
-        bottle_option: "",
-        price: "",
-        mrp: "",
-        discount_percent: "",
-        min_order_qty: "1",
-        max_order_qty: "",
-        is_active: true,
-        images: [],
-      });
+      setVariantForm(INITIAL_VARIANT_FORM);
       loadProduct();
       fetchVariants(lastQuery);
-    } catch (e) {
-      console.error(
-        editingVariant
-          ? "Failed to update variant"
-          : "Failed to create variant",
-        e
-      );
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -203,6 +173,17 @@ export default function ProductVariants() {
     if (!editingVariant || !originalFormData) return true; // Allow submit for create mode
     if (imageFiles && imageFiles.length > 0) return true;
     return JSON.stringify(variantForm) !== JSON.stringify(originalFormData);
+  };
+
+  const removeExistingImage = (indexToRemove) => {
+    setVariantForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, idx) => idx !== indexToRemove),
+    }));
+  };
+
+  const removeNewFile = (indexToRemove) => {
+    setImageFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const openDeleteConfirm = (variant) => {
@@ -337,25 +318,8 @@ export default function ProductVariants() {
   ];
 
   const filters = [
-    {
-      key: "is_active",
-      label: "Status",
-      options: [
-        { value: "true", label: "Active" },
-        { value: "false", label: "Inactive" },
-      ],
-    },
-    {
-      key: "unit",
-      label: "Unit",
-      options: [
-        { value: "pcs", label: "Pieces" },
-        { value: "g", label: "Grams" },
-        { value: "kg", label: "Kilograms" },
-        { value: "ml", label: "Milliliters" },
-        { value: "l", label: "Liters" },
-      ],
-    },
+    { key: "is_active", label: "Status", options: VARIANT_STATUS_OPTIONS },
+    { key: "unit", label: "Unit", options: UNIT_OPTIONS },
   ];
 
   const handleTableQueryChange = (query) => {
@@ -368,8 +332,9 @@ export default function ProductVariants() {
       <PageHeader
         title={`Variants: ${product?.name || "Product"}`}
         subtitle="All variants under this product"
+        onBack={() => navigate("/products")}
         right={
-          <Button variant="secondary" onClick={handleOpenCreateVariant}>
+          <Button onClick={handleOpenCreateVariant}>
             + Add Variant
           </Button>
         }
@@ -432,13 +397,11 @@ export default function ProductVariants() {
               <select
                 value={variantForm.unit}
                 onChange={(e) => handleVariantChange("unit", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
               >
-                <option value="pcs">Pieces</option>
-                <option value="g">Grams</option>
-                <option value="kg">Kilograms</option>
-                <option value="ml">Milliliters</option>
-                <option value="l">Liters</option>
+                {UNIT_OPTIONS.map((u) => (
+                  <option key={u.value} value={u.value}>{u.label}</option>
+                ))}
               </select>
             </div>
             <TextField
@@ -491,57 +454,105 @@ export default function ProductVariants() {
               }
             />
             <div className="flex items-center">
-              <label className="flex items-center">
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={variantForm.is_active}
                   onChange={(e) =>
                     handleVariantChange("is_active", e.target.checked)
                   }
-                  className="mr-2"
+                  className="mr-2 cursor-pointer"
                 />
                 <span className="text-sm text-gray-700">Active</span>
               </label>
             </div>
           </div>
+
+          {/* Images Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Upload Images (max 3)
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Images ({variantForm.images.length + imageFiles.length}/3)
             </label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) =>
-                setImageFiles(Array.from(e.target.files || []).slice(0, 3))
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            {imageFiles.length > 0 && (
-              <div className="mt-2 grid grid-cols-3 gap-2">
-                {imageFiles.map((f, idx) => (
-                  <div key={idx} className="border rounded p-1 text-xs">
-                    <div className="h-16 bg-gray-50 flex items-center justify-center overflow-hidden">
-                      {/* Use browser preview if possible */}
-                      {f.type.startsWith("image/") ? (
-                        <img
-                          src={URL.createObjectURL(f)}
-                          alt={f.name}
-                          className="max-h-16"
-                        />
+
+            {/* Existing images (edit mode) */}
+            {variantForm.images.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {variantForm.images.map((url, idx) => {
+                  const publicUrl = getPublicImageUrl(url);
+                  const isUrl = typeof publicUrl === "string" && /^https?:\/\//.test(publicUrl);
+                  return (
+                    <div key={idx} className="relative group border rounded-lg overflow-hidden bg-gray-50">
+                      {isUrl ? (
+                        <img src={publicUrl} alt={`Image ${idx + 1}`} className="w-full h-24 object-cover" />
                       ) : (
-                        <span className="text-gray-500">{f.name}</span>
+                        <div className="w-full h-24 flex items-center justify-center text-gray-400 text-xs">
+                          No preview
+                        </div>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => removeExistingImage(idx)}
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      >
+                        ×
+                      </button>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[10px] px-1 py-0.5 text-center">
+                        Existing
+                      </div>
                     </div>
-                    <div className="mt-1 truncate" title={f.name}>
-                      {f.name}
+                  );
+                })}
+              </div>
+            )}
+
+            {/* New file previews */}
+            {imageFiles.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {imageFiles.map((f, idx) => (
+                  <div key={idx} className="relative group border rounded-lg overflow-hidden bg-gray-50">
+                    {f.type.startsWith("image/") ? (
+                      <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-24 object-cover" />
+                    ) : (
+                      <div className="w-full h-24 flex items-center justify-center text-gray-400 text-xs">
+                        {f.name}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeNewFile(idx)}
+                      className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      ×
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-blue-600/60 text-white text-[10px] px-1 py-0.5 text-center truncate">
+                      New
                     </div>
                   </div>
                 ))}
               </div>
             )}
+
+            {/* Upload input (only if total < 3) */}
+            {(variantForm.images.length + imageFiles.length) < 3 && (
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const remaining = 3 - variantForm.images.length - imageFiles.length;
+                  const newFiles = Array.from(e.target.files || []).slice(0, remaining);
+                  setImageFiles((prev) => [...prev, ...newFiles].slice(0, 3 - variantForm.images.length));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+              />
+            )}
+
             <p className="text-xs text-gray-500 mt-1">
-              Select up to 3 image files to upload.
+              {variantForm.images.length + imageFiles.length === 0
+                ? "Select up to 3 image files to upload."
+                : variantForm.images.length + imageFiles.length >= 3
+                  ? "Maximum 3 images reached. Remove an image to add a new one."
+                  : `You can add ${3 - variantForm.images.length - imageFiles.length} more image(s).`}
             </p>
           </div>
           <div className="flex justify-end gap-3">

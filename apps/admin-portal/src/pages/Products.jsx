@@ -11,6 +11,8 @@ import ImageUpload from "../components/ui/ImageUpload";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { getPublicImageUrl } from "../lib/storage";
 
+const INITIAL_FORM = { name: "", description: "", category_id: "", default_tax: "0", image_url: "" };
+
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -50,8 +52,8 @@ export default function Products() {
       const { data } = await adminAPI.getProducts(params);
       setProducts(data.data || []);
       if (data.meta) setTotalItems(data.meta.totalItems);
-    } catch (err) {
-      console.error("Failed to load products", err);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -61,8 +63,8 @@ export default function Products() {
     try {
       const { data } = await adminAPI.getCategories();
       setCategories(data.data || []);
-    } catch (e) {
-      console.error("Failed to load categories", e);
+    } catch {
+      // Interceptor handles error toast
     }
   };
 
@@ -73,7 +75,7 @@ export default function Products() {
   const handleOpenCreate = () => {
     setEditingProduct(null);
     setOriginalFormData(null);
-    setForm({ name: "", description: "", category_id: "", default_tax: "0", image_url: "" });
+    setForm(INITIAL_FORM);
     setShowCreate(true);
   };
 
@@ -100,18 +102,13 @@ export default function Products() {
       } else {
         await adminAPI.createProduct(form);
       }
-      setForm({ name: "", description: "", category_id: "", default_tax: "0", image_url: "" });
+      setForm(INITIAL_FORM);
       setShowCreate(false);
       setEditingProduct(null);
       setOriginalFormData(null);
       fetchProducts(lastQuery);
-    } catch (e) {
-      console.error(
-        editingProduct
-          ? "Failed to update product"
-          : "Failed to create product",
-        e
-      );
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -256,7 +253,7 @@ export default function Products() {
               value={form.category_id}
               onChange={(e) => handleChange("category_id", e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
             >
               <option value="">Select Category</option>
               {categories.map((c) => (

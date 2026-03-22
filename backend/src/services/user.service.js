@@ -72,7 +72,7 @@ const updateUserProfile = async (id, data) => {
     if (existingUserWithEmail && existingUserWithEmail.id !== id && existingUserWithEmail.email_verified_at !== null) {
       throw new AppError("This email is already registered and verified by another account", 409);
     }
-    
+
     updateData.email = data.email;
     // When an email is changed, it immediately becomes unverified
     updateData.email_verified_at = null;
@@ -80,6 +80,7 @@ const updateUserProfile = async (id, data) => {
 
   await userRepository.updateUser(id, updateData);
   
+
   // Cleanup old avatar from S3 if it changed or was removed
   if (data.avatar_url !== undefined && user.avatar_url && data.avatar_url !== user.avatar_url) {
     await storageService.deleteObjectByUrl(user.avatar_url);

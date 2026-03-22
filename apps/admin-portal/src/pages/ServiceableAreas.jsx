@@ -17,7 +17,7 @@ export default function ServiceableAreas() {
   const [editingArea, setEditingArea] = useState(null);
   const [lastQuery, setLastQuery] = useState({ page: 1, limit: 10 });
   const [deleteConfirm, setDeleteConfirm] = useState({
-    open: false,
+    isOpen: false,
     area: null,
   });
   const [form, setForm] = useState({
@@ -39,8 +39,8 @@ export default function ServiceableAreas() {
       const { data } = await adminAPI.getServiceableAreas(params);
       setAreas(data.data || []);
       if (data.meta) setTotalItems(data.meta.totalItems);
-    } catch (err) {
-      console.error("Failed to load serviceable areas", err);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -95,15 +95,15 @@ export default function ServiceableAreas() {
       setForm({ name: "", coordinates: null, is_active: true });
       setEditingArea(null);
       fetchAreas(lastQuery);
-    } catch (e) {
-      console.error("Failed to save serviceable area", e);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteClick = (area) => {
-    setDeleteConfirm({ open: true, area });
+    setDeleteConfirm({ isOpen: true, area });
   };
 
   const handleDeleteConfirm = async () => {
@@ -111,10 +111,10 @@ export default function ServiceableAreas() {
     try {
       setLoading(true);
       await adminAPI.deleteServiceableArea(deleteConfirm.area.id);
-      setDeleteConfirm({ open: false, area: null });
+      setDeleteConfirm({ isOpen: false, area: null });
       fetchAreas(lastQuery);
-    } catch (e) {
-      console.error("Failed to delete serviceable area", e);
+    } catch {
+      setDeleteConfirm({ isOpen: false, area: null });
     } finally {
       setLoading(false);
     }
@@ -271,8 +271,8 @@ export default function ServiceableAreas() {
       </Modal>
 
       <ConfirmDialog
-        isOpen={deleteConfirm.open}
-        onClose={() => setDeleteConfirm({ open: false, area: null })}
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, area: null })}
         onConfirm={() => handleDeleteConfirm()}
         title="Delete Serviceable Area"
         message={`Are you sure you want to delete "${deleteConfirm.area?.name}"? This action cannot be undone.`}

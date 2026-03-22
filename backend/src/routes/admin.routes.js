@@ -36,6 +36,7 @@ router.get("/dashboard/stats", (req, res) => {
 router.get("/users", userController.getUsers);
 router.get("/users/:id", userController.getUserById);
 router.patch("/users/:id/status", validate(userValidation.updateStatus), userController.updateStatus);
+router.put("/users/:id/profile", userController.updateProfile);
 
 // Wallet management
 router.get("/wallet/transactions", walletController.adminGetAllTransactions);

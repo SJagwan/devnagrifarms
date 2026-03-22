@@ -6,11 +6,7 @@ import PageContainer from "../components/ui/PageContainer";
 import Button from "../components/ui/Button";
 import Table from "../components/ui/Table";
 
-const STATUS_COLORS = {
-  active: "bg-green-100 text-green-800",
-  inactive: "bg-gray-100 text-gray-800",
-  blocked: "bg-red-100 text-red-800",
-};
+import { USER_STATUS_COLORS } from "../lib/constants";
 
 export default function Customers() {
   const [users, setUsers] = useState([]);
@@ -32,8 +28,8 @@ export default function Customers() {
       const { items, meta } = response.data.data;
       setUsers(items || []);
       if (meta) setTotalItems(meta.totalItems);
-    } catch (err) {
-      console.error("Failed to load users", err);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -65,7 +61,7 @@ export default function Customers() {
       render: (row) => (
         <span
           className={`px-2 py-1 rounded-full text-xs font-semibold capitalize ${
-            STATUS_COLORS[row.status] || "bg-gray-100 text-gray-800"
+            USER_STATUS_COLORS[row.status] || "bg-gray-100 text-gray-800"
           }`}
         >
           {row.status}

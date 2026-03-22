@@ -180,7 +180,7 @@ export default function Dashboard() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button className="text-primary-600 hover:text-primary-800 font-medium">
+                    <button className="text-primary-600 hover:text-primary-800 font-medium cursor-pointer">
                       View
                     </button>
                   </td>
@@ -190,7 +190,7 @@ export default function Dashboard() {
           </table>
         </div>
         <div className="px-6 py-4 border-t border-gray-200">
-          <button className="text-primary-600 hover:text-primary-800 font-medium text-sm">
+          <button className="text-primary-600 hover:text-primary-800 font-medium text-sm cursor-pointer">
             View all orders →
           </button>
         </div>

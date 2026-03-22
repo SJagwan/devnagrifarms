@@ -1,19 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getOrder, updateOrderStatus } from "../lib/api/orders";
+import { adminAPI } from "../lib/api/requests";
 import PageHeader from "../components/ui/PageHeader";
 import PageContainer from "../components/ui/PageContainer";
 import Button from "../components/ui/Button";
 import Spinner from "../components/ui/Spinner";
-import { toast } from "../components/ui/Toaster";
-
-const STATUS_OPTIONS = [
-  "pending",
-  "confirmed",
-  "shipped",
-  "delivered",
-  "cancelled",
-];
+import { ORDER_STATUS_VALUES } from "../lib/constants";
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -28,11 +20,10 @@ export default function OrderDetail() {
 
   const fetchOrder = async () => {
     try {
-      const { data } = await getOrder(id);
+      const { data } = await adminAPI.getOrder(id);
       setOrder(data.data);
-    } catch (err) {
-      console.error("Failed to load order", err);
-      toast.error("Failed to load order details");
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -43,12 +34,10 @@ export default function OrderDetail() {
     
     setUpdating(true);
     try {
-      await updateOrderStatus(id, newStatus);
+      await adminAPI.updateOrderStatus(id, newStatus);
       setOrder((prev) => ({ ...prev, status: newStatus }));
-      toast.success(`Order status updated to ${newStatus}`);
-    } catch (err) {
-      console.error("Failed to update status", err);
-      toast.error("Failed to update status");
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setUpdating(false);
     }
@@ -80,7 +69,6 @@ export default function OrderDetail() {
       <PageHeader
         title={`Order #${order.id.split("-")[0].toUpperCase()}`}
         subtitle={`Placed on ${new Date(order.created_at).toLocaleString()}`}
-        showBack
         onBack={() => navigate("/orders")}
         right={
           <div className="flex items-center gap-2">
@@ -89,9 +77,9 @@ export default function OrderDetail() {
               value={order.status}
               onChange={(e) => handleStatusChange(e.target.value)}
               disabled={updating}
-              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border"
+              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border cursor-pointer"
             >
-              {STATUS_OPTIONS.map((status) => (
+              {ORDER_STATUS_VALUES.map((status) => (
                 <option key={status} value={status}>
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </option>

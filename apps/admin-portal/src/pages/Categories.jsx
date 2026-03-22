@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { adminAPI } from "../lib/api/requests";
 import Button from "../components/ui/Button";
 import TextField from "../components/ui/TextField";
@@ -10,10 +10,12 @@ import ConfirmDialog from "../components/ui/ConfirmDialog";
 import ImageUpload from "../components/ui/ImageUpload";
 import { getPublicImageUrl } from "../lib/storage";
 
+const INITIAL_FORM = { name: "", description: "", image_url: "" };
+
 export default function Categories() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
   const [lastQuery, setLastQuery] = useState({
     page: 1,
     limit: 10,
@@ -23,15 +25,15 @@ export default function Categories() {
   });
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    image_url: "",
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM);
   const [deleteConfirm, setDeleteConfirm] = useState({
     isOpen: false,
     category: null,
   });
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const fetchCategories = async (query) => {
     try {
@@ -46,9 +48,9 @@ export default function Categories() {
       const { data } = await adminAPI.getCategories(params);
       setCategories(data.data || []);
       const meta = data.meta || { total: (data.data || []).length };
-      setTotal(meta.total || 0);
-    } catch (error) {
-      console.error("Failed to load categories:", error);
+      setTotalItems(meta.total || 0);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -63,12 +65,12 @@ export default function Categories() {
       } else {
         await adminAPI.createCategory(formData);
       }
-      setFormData({ name: "", description: "", image_url: "" });
+      setFormData(INITIAL_FORM);
       setShowForm(false);
       setEditingId(null);
       fetchCategories(lastQuery);
-    } catch (error) {
-      console.error("Failed to save category:", error);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -90,8 +92,8 @@ export default function Categories() {
       await adminAPI.deleteCategory(id);
       setDeleteConfirm({ isOpen: false, category: null });
       fetchCategories(lastQuery);
-    } catch (error) {
-      alert(error.message || "Failed to delete category");
+    } catch {
+      setDeleteConfirm({ isOpen: false, category: null });
     } finally {
       setLoading(false);
     }
@@ -102,7 +104,7 @@ export default function Categories() {
   };
 
   const handleCancel = () => {
-    setFormData({ name: "", description: "", image_url: "" });
+    setFormData(INITIAL_FORM);
     setEditingId(null);
     setShowForm(false);
   };
@@ -190,7 +192,7 @@ export default function Categories() {
           <TextField
             label="Category Name"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => handleChange("name", e.target.value)}
             required
           />
           <div>
@@ -199,18 +201,16 @@ export default function Categories() {
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
+              onChange={(e) => handleChange("description", e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-          
+
           <ImageUpload
             label="Category Image"
             value={formData.image_url}
-            onChange={(key) => setFormData({ ...formData, image_url: key })}
+            onChange={(key) => handleChange("image_url", key)}
             prefix="categories"
           />
 
@@ -229,7 +229,7 @@ export default function Categories() {
         columns={columns}
         data={categories}
         onQueryChange={handleTableQueryChange}
-        totalItems={total}
+        totalItems={totalItems}
         loading={loading}
         enableSorting
         enableSearch

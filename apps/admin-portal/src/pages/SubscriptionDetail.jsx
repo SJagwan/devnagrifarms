@@ -1,19 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
-import { getSubscription, updateSubscriptionStatus } from "../lib/api/subscriptions";
+import { adminAPI } from "../lib/api/requests";
 import PageHeader from "../components/ui/PageHeader";
 import PageContainer from "../components/ui/PageContainer";
 import Button from "../components/ui/Button";
 import Spinner from "../components/ui/Spinner";
-
-const STATUS_OPTIONS = ["active", "paused", "cancelled"];
-
-const SCHEDULE_MAP = {
-  d: "Daily",
-  a: "Alternate Days",
-  w: "Weekly",
-};
+import { SUBSCRIPTION_STATUS_VALUES, SCHEDULE_MAP } from "../lib/constants";
 
 export default function SubscriptionDetail() {
   const { id } = useParams();
@@ -28,11 +20,10 @@ export default function SubscriptionDetail() {
 
   const fetchSub = async () => {
     try {
-      const { data } = await getSubscription(id);
+      const { data } = await adminAPI.getSubscription(id);
       setSub(data.data);
-    } catch (err) {
-      console.error("Failed to load subscription", err);
-      toast.error("Failed to load subscription details");
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -43,12 +34,10 @@ export default function SubscriptionDetail() {
     
     setUpdating(true);
     try {
-      await updateSubscriptionStatus(id, newStatus);
+      await adminAPI.updateSubscriptionStatus(id, newStatus);
       setSub((prev) => ({ ...prev, status: newStatus }));
-      toast.success(`Subscription updated to ${newStatus}`);
-    } catch (err) {
-      console.error("Failed to update status", err);
-      toast.error("Failed to update status");
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setUpdating(false);
     }
@@ -80,7 +69,6 @@ export default function SubscriptionDetail() {
       <PageHeader
         title={sub.subscription_name || "Custom Plan"}
         subtitle={`ID: #${sub.id.split("-")[0].toUpperCase()}`}
-        showBack
         onBack={() => navigate("/subscriptions")}
         right={
           <div className="flex items-center gap-2">
@@ -89,13 +77,13 @@ export default function SubscriptionDetail() {
               value={sub.status}
               onChange={(e) => handleStatusChange(e.target.value)}
               disabled={updating}
-              className={`block w-40 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border font-bold capitalize ${
+              className={`block w-40 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-2 border font-bold capitalize cursor-pointer ${
                 sub.status === 'active' ? 'text-green-700 bg-green-50' :
                 sub.status === 'paused' ? 'text-yellow-700 bg-yellow-50' : 
                 'text-red-700 bg-red-50'
               }`}
             >
-              {STATUS_OPTIONS.map((status) => (
+              {SUBSCRIPTION_STATUS_VALUES.map((status) => (
                 <option key={status} value={status}>
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </option>

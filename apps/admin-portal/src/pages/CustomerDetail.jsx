@@ -9,20 +9,7 @@ import ConfirmDialog from "../components/ui/ConfirmDialog";
 import Modal from "../components/ui/Modal";
 import TextField from "../components/ui/TextField";
 import { toast } from "../components/ui/Toaster";
-
-const STATUS_COLORS = {
-  active: "bg-green-100 text-green-800",
-  inactive: "bg-gray-100 text-gray-800",
-  blocked: "bg-red-100 text-red-800",
-};
-
-const ORDER_STATUS_COLORS = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  shipped: "bg-purple-100 text-purple-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
-};
+import { USER_STATUS_COLORS, ORDER_STATUS_COLORS } from "../lib/constants";
 
 // --- Sub-Components for UI Separation (SRP) ---
 
@@ -33,7 +20,7 @@ const StatCards = ({ user, onAdjustClick }) => (
       <p className="mt-1 text-2xl font-semibold text-green-600">₹{user.wallet_balance}</p>
       <button 
         onClick={onAdjustClick}
-        className="mt-3 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1 px-3 rounded-full self-center transition-colors"
+        className="mt-3 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1 px-3 rounded-full self-center transition-colors cursor-pointer"
       >
         Adjust Balance
       </button>
@@ -257,7 +244,7 @@ const ContactInfo = ({ user, isBlocked, onToggleStatus, blocking }) => (
           variant="outline" 
           className={`w-full ${isBlocked ? "text-green-600 border-green-200 hover:bg-green-50" : "text-red-600 border-red-200 hover:bg-red-50"}`} 
           onClick={() => onToggleStatus("status")}
-          loading={blocking}
+          isLoading={blocking}
         >
           {isBlocked ? "Activate User" : "Block User"}
         </Button>
@@ -311,7 +298,7 @@ export default function CustomerDetail() {
 
   // Edit Profile State
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editData, setEditData] = useState({ first_name: "", last_name: "", avatar_url: "" });
+  const [editData, setEditData] = useState({ first_name: "", last_name: "" });
   const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
@@ -328,9 +315,8 @@ export default function CustomerDetail() {
       ]);
       setUser(userRes.data.data);
       setTransactions(walletRes.data.data.items || []);
-    } catch (err) {
-      console.error("Failed to load customer data", err);
-      toast.error("Failed to load customer details");
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
       setWalletLoading(false);
@@ -341,8 +327,8 @@ export default function CustomerDetail() {
     try {
       const walletRes = await adminAPI.getUserPassbook(id, { limit: 5 });
       setTransactions(walletRes.data.data.items || []);
-    } catch (err) {
-      console.error("Failed to refresh passbook", err);
+    } catch {
+      // Interceptor handles error toast
     }
   };
 
@@ -352,10 +338,8 @@ export default function CustomerDetail() {
     try {
       await adminAPI.updateUserStatus(id, newStatus);
       setUser((prev) => ({ ...prev, status: newStatus }));
-      toast.success(`User has been ${newStatus === "blocked" ? "blocked" : "activated"}`);
-    } catch (err) {
-      console.error("Failed to update status", err);
-      toast.error(err.response?.data?.message || "Failed to update user status");
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setBlocking(false);
       setShowConfirm(false);
@@ -379,17 +363,15 @@ export default function CustomerDetail() {
         description: adjDescription
       });
       
-      toast.success("Wallet adjusted successfully");
       setShowAdjModal(false);
       setAdjAmount("");
       setAdjDescription("");
-      
+
       // Update balance locally and refresh passbook
       setUser(prev => ({ ...prev, wallet_balance: res.data.data.balance }));
       fetchPassbookOnly();
-    } catch (err) {
-      console.error("Failed to adjust wallet", err);
-      toast.error(err.response?.data?.message || "Failed to adjust wallet");
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setAdjLoading(false);
     }
@@ -402,12 +384,10 @@ export default function CustomerDetail() {
     setEditLoading(true);
     try {
       await adminAPI.updateUserProfile(id, editData);
-      toast.success("Profile updated successfully");
       setShowEditModal(false);
       setUser((prev) => ({ ...prev, ...editData }));
-    } catch (err) {
-      console.error("Failed to update profile", err);
-      toast.error(err.response?.data?.message || "Failed to update profile");
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setEditLoading(false);
     }
@@ -440,12 +420,11 @@ export default function CustomerDetail() {
       <PageHeader
         title={`${user.first_name} ${user.last_name}`}
         subtitle={`Joined on ${joinedDate ? new Date(joinedDate).toLocaleDateString() : "N/A"}`}
-        showBack
         onBack={() => navigate("/customers")}
         right={
           <span
             className={`px-3 py-1 rounded-full text-sm font-semibold capitalize ${
-              STATUS_COLORS[user.status] || "bg-gray-100 text-gray-800"
+              USER_STATUS_COLORS[user.status] || "bg-gray-100 text-gray-800"
             }`}
           >
             {user.status}
@@ -474,7 +453,6 @@ export default function CustomerDetail() {
                 setEditData({
                   first_name: user.first_name,
                   last_name: user.last_name,
-                  avatar_url: user.avatar_url || "",
                 });
                 setShowEditModal(true);
               }
@@ -510,7 +488,7 @@ export default function CustomerDetail() {
             <button
               type="button"
               onClick={() => setAdjType("add")}
-              className={`flex-1 py-2 border rounded-md font-medium text-sm transition-colors ${
+              className={`flex-1 py-2 border rounded-md font-medium text-sm transition-colors cursor-pointer ${
                 adjType === "add"
                   ? "bg-green-50 border-green-500 text-green-700"
                   : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -521,7 +499,7 @@ export default function CustomerDetail() {
             <button
               type="button"
               onClick={() => setAdjType("deduct")}
-              className={`flex-1 py-2 border rounded-md font-medium text-sm transition-colors ${
+              className={`flex-1 py-2 border rounded-md font-medium text-sm transition-colors cursor-pointer ${
                 adjType === "deduct"
                   ? "bg-red-50 border-red-500 text-red-700"
                   : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -565,7 +543,7 @@ export default function CustomerDetail() {
             </Button>
             <Button
               type="submit"
-              loading={adjLoading}
+              isLoading={adjLoading}
               className={
                 adjType === "add"
                   ? "bg-green-600 hover:bg-green-700"
@@ -602,15 +580,6 @@ export default function CustomerDetail() {
             }
             placeholder="Last Name"
           />
-          <TextField
-            label="Avatar URL"
-            value={editData.avatar_url}
-            onChange={(e) =>
-              setEditData((prev) => ({ ...prev, avatar_url: e.target.value }))
-            }
-            placeholder="https://example.com/photo.jpg"
-          />
-
           <div className="flex justify-end gap-3 mt-6">
             <Button
               type="button"
@@ -620,7 +589,7 @@ export default function CustomerDetail() {
             >
               Cancel
             </Button>
-            <Button type="submit" loading={editLoading}>
+            <Button type="submit" isLoading={editLoading}>
               Save Changes
             </Button>
           </div>

@@ -27,8 +27,8 @@ export default function ProductEdit() {
     try {
       const { data } = await adminAPI.getCategories();
       setCategories(data.data || []);
-    } catch (e) {
-      console.error("Failed to load categories", e);
+    } catch {
+      // Interceptor handles error toast
     }
   };
 
@@ -43,8 +43,8 @@ export default function ProductEdit() {
         category_id: p.category_id || p.category?.id || "",
         default_tax: String(p.default_tax ?? "0"),
       });
-    } catch (e) {
-      console.error("Failed to load product", e);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -65,8 +65,8 @@ export default function ProductEdit() {
         default_tax: form.default_tax,
       });
       navigate("/products");
-    } catch (e) {
-      console.error("Failed to update product", e);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ export default function ProductEdit() {
               value={form.category_id}
               onChange={(e) => handleChange("category_id", e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
             >
               <option value="">Select Category</option>
               {categories.map((cat) => (

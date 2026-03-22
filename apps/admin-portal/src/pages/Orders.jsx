@@ -1,26 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getOrders } from "../lib/api/orders";
+import { adminAPI } from "../lib/api/requests";
 import PageHeader from "../components/ui/PageHeader";
 import PageContainer from "../components/ui/PageContainer";
 import Button from "../components/ui/Button";
 import Table from "../components/ui/Table";
-
-const STATUS_COLORS = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  shipped: "bg-purple-100 text-purple-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
-};
-
-const STATUS_OPTIONS = [
-  { label: "Pending", value: "pending" },
-  { label: "Confirmed", value: "confirmed" },
-  { label: "Shipped", value: "shipped" },
-  { label: "Delivered", value: "delivered" },
-  { label: "Cancelled", value: "cancelled" },
-];
+import { ORDER_STATUS_COLORS, ORDER_STATUS_OPTIONS } from "../lib/constants";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -37,12 +22,12 @@ export default function Orders() {
         status: query.filters?.status || undefined,
         search: query.search || undefined,
       };
-      const response = await getOrders(params);
+      const response = await adminAPI.getOrders(params);
       const { items, meta } = response.data.data;
       setOrders(items || []);
       if (meta) setTotalItems(meta.totalItems);
-    } catch (err) {
-      console.error("Failed to load orders", err);
+    } catch {
+      // Interceptor handles error toast
     } finally {
       setLoading(false);
     }
@@ -76,7 +61,7 @@ export default function Orders() {
       render: (row) => (
         <span
           className={`px-2 py-1 rounded-full text-xs font-semibold capitalize ${
-            STATUS_COLORS[row.status] || "bg-gray-100 text-gray-800"
+            ORDER_STATUS_COLORS[row.status] || "bg-gray-100 text-gray-800"
           }`}
         >
           {row.status}
@@ -116,7 +101,7 @@ export default function Orders() {
     {
       key: "status",
       label: "Filter by Status",
-      options: STATUS_OPTIONS,
+      options: ORDER_STATUS_OPTIONS,
     },
   ];
 
