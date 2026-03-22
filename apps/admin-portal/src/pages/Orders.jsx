@@ -76,7 +76,10 @@ export default function Orders() {
     {
       key: "date",
       label: "Date",
-      render: (row) => new Date(row.created_at).toLocaleDateString(),
+      render: (row) => {
+        const date = row.created_at || row.createdAt;
+        return date ? new Date(date).toLocaleDateString() : "N/A";
+      },
     },
     {
       key: "actions",

@@ -15,6 +15,7 @@ const userController = require("../controllers/user.controller");
 const walletController = require("../controllers/wallet.controller");
 const bannerController = require("../controllers/banner.controller");
 const dashboardController = require("../controllers/dashboard.controller");
+const invoiceController = require("../controllers/invoice.controller");
 const bannerValidation = require("../validations/banner.validation");
 
 const isAdmin = (req, res, next) => {
@@ -46,6 +47,7 @@ router.post("/users/:userId/wallet/adjustment", walletController.adminManualAdju
 router.get("/orders", orderController.getOrders);
 router.get("/orders/:id", orderController.getOrderById);
 router.patch("/orders/:id/status", validate(orderValidation.updateStatus), orderController.updateStatus);
+router.get("/orders/:id/invoice", invoiceController.getInvoice);
 
 // Subscription management
 router.get("/subscriptions", subscriptionController.adminGetSubscriptions);

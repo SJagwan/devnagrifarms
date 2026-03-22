@@ -12,6 +12,8 @@ import SubscriptionDetail from "../pages/SubscriptionDetail";
 import Customers from "../pages/Customers";
 import CustomerDetail from "../pages/CustomerDetail";
 import Banners from "../pages/Banners";
+import Invoice from "../pages/Invoice";
+import InvoiceGenerator from "../pages/InvoiceGenerator";
 
 export const protectedRoutes = [
   {
@@ -29,6 +31,10 @@ export const protectedRoutes = [
   {
     path: "/orders/:id",
     element: OrderDetail,
+  },
+  {
+    path: "/orders/:id/invoice",
+    element: Invoice,
   },
   {
     path: "/subscriptions",
@@ -61,6 +67,10 @@ export const protectedRoutes = [
   {
     path: "/products/:id/variants",
     element: ProductVariants,
+  },
+  {
+    path: "/invoices",
+    element: InvoiceGenerator,
   },
   {
     path: "/banners",

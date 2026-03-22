@@ -17,7 +17,7 @@ export default function PageHeader({ title, subtitle, right, onBack, className =
         )}
         <div className="min-w-0">
           {title && <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{title}</h1>}
-          {subtitle && <p className="text-sm sm:text-base text-gray-600 truncate">{subtitle}</p>}
+          {subtitle && <p className="text-sm text-gray-800 truncate">{subtitle}</p>}
         </div>
       </div>
       {right ? <div className="flex-shrink-0">{right}</div> : null}

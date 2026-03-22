@@ -112,6 +112,7 @@ export const adminAPI = {
   // Orders
   getOrders: (params = {}) => api.get("/admin/orders", { params }),
   getOrder: (id) => api.get(`/admin/orders/${id}`),
+  getOrderInvoice: (id) => api.get(`/admin/orders/${id}/invoice`),
   updateOrderStatus: (id, status) =>
     api.patch(`/admin/orders/${id}/status`, { status }, {
       meta: { successMessage: "Order status updated" },

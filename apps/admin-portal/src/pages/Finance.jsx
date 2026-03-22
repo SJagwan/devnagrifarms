@@ -91,7 +91,7 @@ export default function Finance() {
   return (
     <PageContainer>
       <PageHeader
-        title="Finance Dashboard"
+        title="Finance"
         subtitle="System-wide wallet transactions and ledger"
       />
 
