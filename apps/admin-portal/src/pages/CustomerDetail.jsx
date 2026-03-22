@@ -8,6 +8,7 @@ import Spinner from "../components/ui/Spinner";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import Modal from "../components/ui/Modal";
 import TextField from "../components/ui/TextField";
+import Table from "../components/ui/Table";
 import { toast } from "../components/ui/Toaster";
 import { USER_STATUS_COLORS, ORDER_STATUS_COLORS } from "../lib/constants";
 
@@ -36,51 +37,58 @@ const StatCards = ({ user, onAdjustClick }) => (
   </div>
 );
 
+const walletColumns = [
+  {
+    key: "date",
+    label: "Date",
+    render: (row) => (
+      <span className="text-sm text-gray-500">
+        {new Date(row.created_at || row.createdAt).toLocaleDateString()}
+      </span>
+    ),
+  },
+  {
+    key: "type",
+    label: "Type",
+    render: (row) => (
+      <span className="px-2 py-1 inline-flex text-[10px] leading-4 font-semibold rounded-full bg-gray-100 text-gray-800 capitalize">
+        {row.type}
+      </span>
+    ),
+  },
+  {
+    key: "description",
+    label: "Description",
+    render: (row) => (
+      <span className="text-sm text-gray-500 truncate max-w-[200px] block" title={row.description}>
+        {row.description || "-"}
+      </span>
+    ),
+  },
+  {
+    key: "amount",
+    label: "Amount",
+    render: (row) => (
+      <span className={`text-sm font-bold ${row.direction === "credit" ? "text-green-600" : "text-red-600"}`}>
+        {row.direction === "credit" ? "+" : "-"}₹{row.amount}
+      </span>
+    ),
+    headerClassName: "text-right",
+    className: "text-right",
+  },
+];
+
 const WalletPassbook = ({ transactions, loading }) => (
-  <div className="bg-white shadow rounded-lg overflow-hidden">
-    <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-      <h3 className="text-lg font-medium text-gray-900">Recent Wallet Activity</h3>
-    </div>
-    <div className="overflow-x-auto">
-      {loading ? (
-        <div className="p-6 flex justify-center"><Spinner /></div>
-      ) : transactions.length > 0 ? (
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {transactions.map((tx) => (
-              <tr key={tx.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(tx.created_at || tx.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 inline-flex text-[10px] leading-4 font-semibold rounded-full bg-gray-100 text-gray-800 capitalize`}>
-                    {tx.type}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500 truncate max-w-[200px]" title={tx.description}>
-                  {tx.description || "-"}
-                </td>
-                <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold text-right ${
-                  tx.direction === "credit" ? "text-green-600" : "text-red-600"
-                }`}>
-                  {tx.direction === "credit" ? "+" : "-"}₹{tx.amount}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <div className="p-6 text-center text-gray-500 italic">No wallet transactions found.</div>
-      )}
-    </div>
+  <div>
+    <h3 className="text-lg font-medium text-gray-900 mb-3">Recent Wallet Activity</h3>
+    <Table
+      columns={walletColumns}
+      data={transactions}
+      totalItems={transactions.length}
+      loading={loading}
+      showPagination={false}
+      emptyMessage="No wallet transactions found."
+    />
   </div>
 );
 
@@ -127,58 +135,67 @@ const SavedAddresses = ({ addresses }) => (
   </div>
 );
 
+const orderColumns = [
+  {
+    key: "id",
+    label: "ID",
+    render: (row) => (
+      <span className="text-sm font-mono text-gray-600">
+        #{row.id.split("-")[0].toUpperCase()}
+      </span>
+    ),
+  },
+  {
+    key: "status",
+    label: "Status",
+    render: (row) => (
+      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${ORDER_STATUS_COLORS[row.status] || "bg-gray-100"}`}>
+        {row.status}
+      </span>
+    ),
+  },
+  {
+    key: "total",
+    label: "Total",
+    render: (row) => <span className="text-sm text-gray-900">₹{row.total_price}</span>,
+  },
+  {
+    key: "date",
+    label: "Date",
+    render: (row) => (
+      <span className="text-sm text-gray-500">
+        {new Date(row.created_at || row.createdAt).toLocaleDateString()}
+      </span>
+    ),
+  },
+  {
+    key: "actions",
+    label: "Actions",
+    render: (row) => (
+      <Link to={`/orders/${row.id}`} className="text-green-600 hover:text-green-900 text-sm font-medium">
+        Details
+      </Link>
+    ),
+    headerClassName: "text-right",
+    className: "text-right",
+  },
+];
+
 const RecentOrders = ({ orders, userId }) => (
-  <div className="bg-white shadow rounded-lg overflow-hidden">
-    <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+  <div>
+    <div className="flex items-center justify-between mb-3">
       <h3 className="text-lg font-medium text-gray-900">Recent Orders</h3>
       <Link to={`/orders?search=${userId}`} className="text-sm text-green-600 hover:text-green-700 font-medium">
         View All
       </Link>
     </div>
-    <div className="overflow-x-auto">
-      {orders?.length > 0 ? (
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th className="relative px-6 py-3">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map((order) => (
-              <tr key={order.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
-                  #{order.id.split("-")[0].toUpperCase()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${ORDER_STATUS_COLORS[order.status] || "bg-gray-100"}`}>
-                    {order.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  ₹{order.total_price}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(order.created_at || order.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link to={`/orders/${order.id}`} className="text-green-600 hover:text-green-900">
-                    Details
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <div className="p-6 text-center text-gray-500 italic">No orders found.</div>
-      )}
-    </div>
+    <Table
+      columns={orderColumns}
+      data={orders || []}
+      totalItems={(orders || []).length}
+      showPagination={false}
+      emptyMessage="No orders found."
+    />
   </div>
 );
 
@@ -432,9 +449,9 @@ export default function CustomerDetail() {
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left Column - Details & Addresses */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-6">
           <StatCards user={user} onAdjustClick={() => setShowAdjModal(true)} />
           <WalletPassbook transactions={transactions} loading={walletLoading} />
           <SavedAddresses addresses={user.addresses} />

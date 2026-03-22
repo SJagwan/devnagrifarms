@@ -9,10 +9,10 @@ export default function Modal({
   size = "md",
 }) {
   const sizeClasses = {
-    sm: "max-w-md",
-    md: "max-w-lg",
-    lg: "max-w-2xl",
-    xl: "max-w-4xl",
+    sm: "max-w-[95vw] sm:max-w-md",
+    md: "max-w-[95vw] sm:max-w-lg",
+    lg: "max-w-[95vw] sm:max-w-xl md:max-w-2xl",
+    xl: "max-w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl",
   };
 
   return (
@@ -30,7 +30,7 @@ export default function Modal({
             className={`bg-white rounded-lg shadow-xl w-full my-8 ${sizeClasses[size]}`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
               <DialogTitle className="text-lg font-semibold text-gray-900">
                 {title}
               </DialogTitle>
@@ -58,7 +58,7 @@ export default function Modal({
             </div>
 
             {/* Content */}
-            <div className="p-6">{children}</div>
+            <div className="p-4 sm:p-6">{children}</div>
           </DialogPanel>
         </div>
       </div>

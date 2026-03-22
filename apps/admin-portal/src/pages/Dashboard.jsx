@@ -1,5 +1,6 @@
 import PageHeader from "../components/ui/PageHeader";
 import PageContainer from "../components/ui/PageContainer";
+import Table from "../components/ui/Table";
 
 export default function Dashboard() {
   const stats = [
@@ -127,73 +128,33 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Orders */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
+      <div>
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">Recent Orders</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Items
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {recentOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {order.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {order.customer}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {order.items}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                    {order.amount}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                        order.status
-                      )}`}
-                    >
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button className="text-primary-600 hover:text-primary-800 font-medium cursor-pointer">
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-6 py-4 border-t border-gray-200">
           <button className="text-primary-600 hover:text-primary-800 font-medium text-sm cursor-pointer">
             View all orders →
           </button>
         </div>
+        <Table
+          columns={[
+            { key: "id", label: "Order ID", render: (row) => <span className="text-sm font-medium text-gray-900">{row.id}</span> },
+            { key: "customer", label: "Customer", render: (row) => <span className="text-sm text-gray-900">{row.customer}</span> },
+            { key: "items", label: "Items", render: (row) => <span className="text-sm text-gray-600">{row.items}</span> },
+            { key: "amount", label: "Amount", render: (row) => <span className="text-sm font-semibold text-gray-900">{row.amount}</span> },
+            { key: "status", label: "Status", render: (row) => (
+              <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(row.status)}`}>
+                {row.status}
+              </span>
+            )},
+            { key: "actions", label: "Action", render: () => (
+              <button className="text-primary-600 hover:text-primary-800 font-medium text-sm cursor-pointer">View</button>
+            ), headerClassName: "text-right", className: "text-right" },
+          ]}
+          data={recentOrders}
+          totalItems={recentOrders.length}
+          showPagination={false}
+          emptyMessage="No recent orders."
+        />
       </div>
     </PageContainer>
   );

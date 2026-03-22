@@ -137,9 +137,67 @@ export default function Table({
         </div>
       )}
 
-      {/* Table */}
+      {/* Mobile Card View */}
+      {(() => {
+        const actionsCol = columns.find((c) => c.key === "actions");
+        const dataCols = columns.filter((c) => c.key !== "actions");
+        return (
+          <div className="sm:hidden relative" aria-busy={loading}>
+            {paginatedData.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center text-gray-500">
+                {emptyMessage}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {paginatedData.map((row, rowIndex) => (
+                  <div
+                    key={row.id || rowIndex}
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+                  >
+                    <div className="p-4 space-y-2.5">
+                      {dataCols.map((column) => (
+                        <div
+                          key={column.key}
+                          className="flex items-start justify-between gap-3"
+                        >
+                          <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wide shrink-0 pt-0.5">
+                            {column.label}
+                          </span>
+                          <div className="text-sm text-gray-900 text-right min-w-0">
+                            {column.render
+                              ? column.render(row, rowIndex)
+                              : column.accessor
+                              ? column.accessor(row)
+                              : row[column.key]}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {actionsCol && (
+                      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
+                        {actionsCol.render(row, rowIndex)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Loading overlay for cards */}
+            {loading && (
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center rounded-lg">
+                <Spinner />
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Desktop Table */}
       <div
-        className="bg-white rounded-lg shadow overflow-hidden relative border border-gray-200"
+        className={`hidden sm:block bg-white shadow overflow-hidden relative border border-gray-200 ${
+          totalItems > 0 && (showRowsPerPage || (showPagination && totalPages > 1)) ? "rounded-t-lg" : "rounded-lg"
+        }`}
         aria-busy={loading}
       >
         <div className="overflow-x-auto">
@@ -164,7 +222,7 @@ export default function Table({
                           : "none"
                       }
                       onClick={() => sortable && handleSort(column)}
-                      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider select-none sticky top-0 z-10 bg-gray-50 ${
+                      className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider select-none sticky top-0 z-10 bg-gray-50 ${
                         column.headerClassName || ""
                       } ${
                         sortable
@@ -194,7 +252,7 @@ export default function Table({
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-6 py-8 text-center text-gray-500"
+                    className="px-3 sm:px-6 py-8 text-center text-gray-500"
                   >
                     {emptyMessage}
                   </td>
@@ -210,7 +268,7 @@ export default function Table({
                     {columns.map((column) => (
                       <td
                         key={column.key}
-                        className={`px-6 py-4 ${column.className || ""}`}
+                        className={`px-3 sm:px-6 py-4 ${column.className || ""}`}
                       >
                         {column.render
                           ? column.render(row, rowIndex)
@@ -233,94 +291,95 @@ export default function Table({
           </div>
         )}
 
-        {/* Pagination */}
-        {totalItems > 0 && (showRowsPerPage || showPagination) && (
-          <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-            {showRowsPerPage && (
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <span>Show</span>
-                <select
-                  value={rowsPerPage}
-                  onChange={(e) => handleRowsPerPageChange(e.target.value)}
-                  className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
-                >
-                  {rowsPerPageOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                <span>
-                  entries (Showing {startIndex + 1}-
-                  {Math.min(endIndex, totalItems)} of {totalItems})
-                </span>
-              </div>
-            )}
-
-            {showPagination && totalPages > 1 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-
-                <div className="flex gap-1">
-                  {[...Array(totalPages)].map((_, i) => {
-                    const page = i + 1;
-                    // Show first, last, current, and adjacent pages
-                    if (
-                      page === 1 ||
-                      page === totalPages ||
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                    ) {
-                      return (
-                        <Button
-                          key={page}
-                          variant={currentPage === page ? "primary" : "ghost"}
-                          size="sm"
-                          onClick={() => setCurrentPage(page)}
-                          className="min-w-[2.5rem]"
-                        >
-                          {page}
-                        </Button>
-                      );
-                    } else if (
-                      page === currentPage - 2 ||
-                      page === currentPage + 2
-                    ) {
-                      return (
-                        <span key={page} className="px-2 py-1 text-gray-500">
-                          ...
-                        </span>
-                      );
-                    }
-                    return null;
-                  })}
-                </div>
-
-                <span className="hidden sm:inline text-sm text-gray-600 px-1">
-                  Page {currentPage} of {totalPages}
-                </span>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Pagination (shared between mobile cards and desktop table) */}
+      {totalItems > 0 && (showRowsPerPage || (showPagination && totalPages > 1)) && (
+        <div className="bg-white rounded-lg sm:rounded-b-lg sm:rounded-t-none shadow-sm sm:shadow border border-gray-200 sm:border-t-0 px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          {showRowsPerPage && (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <span>Show</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => handleRowsPerPageChange(e.target.value)}
+                className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+              >
+                {rowsPerPageOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <span className="hidden sm:inline">
+                entries (Showing {startIndex + 1}-
+                {Math.min(endIndex, totalItems)} of {totalItems})
+              </span>
+              <span className="sm:hidden">entries</span>
+            </div>
+          )}
+
+          {showPagination && totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+
+              <div className="hidden sm:flex gap-1">
+                {[...Array(totalPages)].map((_, i) => {
+                  const page = i + 1;
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "primary" : "ghost"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="min-w-[2.5rem]"
+                      >
+                        {page}
+                      </Button>
+                    );
+                  } else if (
+                    page === currentPage - 2 ||
+                    page === currentPage + 2
+                  ) {
+                    return (
+                      <span key={page} className="px-2 py-1 text-gray-500">
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+
+              <span className="hidden sm:inline text-sm text-gray-600 px-1">
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

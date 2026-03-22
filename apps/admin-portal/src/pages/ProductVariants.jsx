@@ -476,7 +476,7 @@ export default function ProductVariants() {
 
             {/* Existing images (edit mode) */}
             {variantForm.images.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
                 {variantForm.images.map((url, idx) => {
                   const publicUrl = getPublicImageUrl(url);
                   const isUrl = typeof publicUrl === "string" && /^https?:\/\//.test(publicUrl);
@@ -507,7 +507,7 @@ export default function ProductVariants() {
 
             {/* New file previews */}
             {imageFiles.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
                 {imageFiles.map((f, idx) => (
                   <div key={idx} className="relative group border rounded-lg overflow-hidden bg-gray-50">
                     {f.type.startsWith("image/") ? (

@@ -13,7 +13,7 @@ export default function PageContainer({
   const widthClass = widthMap[maxWidth] || widthMap.xl;
   return (
     <div className={`w-full ${className}`}>
-      <div className={`${widthClass} px-4 sm:px-4 lg:px-6`}>{children}</div>
+      <div className={`${widthClass} px-3 sm:px-4 lg:px-6`}>{children}</div>
     </div>
   );
 }
