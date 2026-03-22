@@ -8,6 +8,7 @@ import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import TextField from "../components/ui/TextField";
 import Table from "../components/ui/Table";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 export default function ProductVariants() {
   const { id } = useParams();
@@ -25,6 +26,10 @@ export default function ProductVariants() {
   });
   const [totalItems, setTotalItems] = useState(0);
 
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    isOpen: false,
+    variant: null,
+  });
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [editingVariant, setEditingVariant] = useState(null);
   const [originalFormData, setOriginalFormData] = useState(null);
@@ -200,6 +205,23 @@ export default function ProductVariants() {
     return JSON.stringify(variantForm) !== JSON.stringify(originalFormData);
   };
 
+  const openDeleteConfirm = (variant) => {
+    setDeleteConfirm({ isOpen: true, variant });
+  };
+
+  const handleDeleteVariant = async (variantId) => {
+    setLoading(true);
+    try {
+      await adminAPI.deleteProductVariant(id, variantId);
+      setDeleteConfirm({ isOpen: false, variant: null });
+      fetchVariants(lastQuery);
+    } catch {
+      setDeleteConfirm({ isOpen: false, variant: null });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const columns = [
     {
       key: "sku",
@@ -299,6 +321,13 @@ export default function ProductVariants() {
             onClick={() => handleEditVariant(row)}
           >
             Edit
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => openDeleteConfirm(row)}
+          >
+            Delete
           </Button>
         </div>
       ),
@@ -538,6 +567,17 @@ export default function ProductVariants() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, variant: null })}
+        onConfirm={() => handleDeleteVariant(deleteConfirm.variant.id)}
+        title="Delete Variant"
+        message={`Are you sure you want to delete variant "${deleteConfirm.variant?.sku}"? This will also delete its images and inventory. This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+        loading={loading}
+      />
     </PageContainer>
   );
 }

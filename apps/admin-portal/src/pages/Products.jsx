@@ -8,6 +8,7 @@ import Modal from "../components/ui/Modal";
 import TextField from "../components/ui/TextField";
 import Table from "../components/ui/Table";
 import ImageUpload from "../components/ui/ImageUpload";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { getPublicImageUrl } from "../lib/storage";
 
 export default function Products() {
@@ -25,6 +26,10 @@ export default function Products() {
     category_id: "",
     default_tax: "0",
     image_url: "",
+  });
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    isOpen: false,
+    product: null,
   });
   const navigate = useNavigate();
 
@@ -117,6 +122,23 @@ export default function Products() {
     return JSON.stringify(form) !== JSON.stringify(originalFormData);
   };
 
+  const openDeleteConfirm = (product) => {
+    setDeleteConfirm({ isOpen: true, product });
+  };
+
+  const handleDelete = async (id) => {
+    setLoading(true);
+    try {
+      await adminAPI.deleteProduct(id);
+      setDeleteConfirm({ isOpen: false, product: null });
+      fetchProducts(lastQuery);
+    } catch {
+      setDeleteConfirm({ isOpen: false, product: null });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const columns = [
     {
       key: "image",
@@ -171,6 +193,9 @@ export default function Products() {
           </Button>
           <Button variant="outline" size="sm" onClick={() => handleEdit(row)}>
             Edit
+          </Button>
+          <Button variant="danger" size="sm" onClick={() => openDeleteConfirm(row)}>
+            Delete
           </Button>
         </div>
       ),
@@ -290,6 +315,19 @@ export default function Products() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, product: null })}
+        onConfirm={() => handleDelete(deleteConfirm.product.id)}
+        title="Delete Product"
+        message={`Are you sure you want to delete "${deleteConfirm.product?.name}"? This will also delete all its variants, images, and inventory. This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+        requireNameMatch
+        nameToMatch={deleteConfirm.product?.name || ""}
+        loading={loading}
+      />
     </PageContainer>
   );
 }

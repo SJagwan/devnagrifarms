@@ -1,7 +1,7 @@
 const productRepo = require("../repositories/product.repository");
 const variantRepo = require("../repositories/product-variant.repository");
 const storageService = require("./storage.service");
-const { ProductVariantImage, Inventory } = require("../models");
+const { ProductVariantImage, Inventory, OrderItem, SubscriptionItem, ProductVariant } = require("../models");
 
 /**
  * Normalize image payload: accepts strings or objects with {key} or {url}.
@@ -156,12 +156,44 @@ const updateProduct = async (id, data) => {
 
 const deleteProduct = async (id) => {
   const existing = await productRepo.getProductById(id);
+
+  // Check if any variant of this product is referenced by orders or subscriptions
+  const variantIds = await ProductVariant.findAll({
+    where: { product_id: id },
+    attributes: ["id"],
+    raw: true,
+  }).then((rows) => rows.map((r) => r.id));
+
+  if (variantIds.length > 0) {
+    const orderRef = await OrderItem.count({
+      where: { product_variant_id: variantIds },
+    });
+    if (orderRef > 0) {
+      const err = new Error(
+        "Cannot delete product. It has variants linked to existing orders."
+      );
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const subRef = await SubscriptionItem.count({
+      where: { product_variant_id: variantIds },
+    });
+    if (subRef > 0) {
+      const err = new Error(
+        "Cannot delete product. It has variants linked to existing subscriptions."
+      );
+      err.statusCode = 409;
+      throw err;
+    }
+  }
+
   const result = await productRepo.deleteProduct(id);
-  
+
   if (existing?.image_url) {
     await storageService.deleteObjectByUrl(existing.image_url);
   }
-  
+
   return result;
 };
 
@@ -356,6 +388,29 @@ const updateVariant = async (variantId, data) => {
 };
 
 const deleteVariant = async (variantId) => {
+  // Check if variant is referenced by orders or subscriptions
+  const orderRef = await OrderItem.count({
+    where: { product_variant_id: variantId },
+  });
+  if (orderRef > 0) {
+    const err = new Error(
+      "Cannot delete variant. It is linked to existing orders."
+    );
+    err.statusCode = 409;
+    throw err;
+  }
+
+  const subRef = await SubscriptionItem.count({
+    where: { product_variant_id: variantId },
+  });
+  if (subRef > 0) {
+    const err = new Error(
+      "Cannot delete variant. It is linked to existing subscriptions."
+    );
+    err.statusCode = 409;
+    throw err;
+  }
+
   // Get variant images before deletion
   const variant = await variantRepo.getVariantById(variantId);
   const imageUrls = (variant?.images || [])
