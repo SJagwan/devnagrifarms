@@ -1,6 +1,7 @@
 const asyncHandler = require("../middlewares/asyncHandler");
 const subscriptionService = require("../services/subscription.service");
 const AppError = require("../utils/AppError");
+const logger = require("../config/logger");
 
 const SCHEDULE_MAP = {
   daily: "d",
@@ -125,14 +126,14 @@ const adminUpdateStatus = asyncHandler(async (req, res) => {
 const processDailySubscriptions = asyncHandler(async (req, res) => {
   // This is triggered by AWS EventBridge every day (e.g. at 12:00 AM)
   const result = await subscriptionService.processDailySubscriptions();
-  
+  logger.info(`[WebhookController] Successfully processed daily subscriptions. Processed: ${result.processed}, Skipped: ${result.skipped}, Failed: ${result.failed}`);
+
   res.json({
     success: true,
     message: "Daily subscriptions processed successfully",
     data: result,
   });
 });
-
 module.exports = {
   createSubscription,
   getSubscriptions,

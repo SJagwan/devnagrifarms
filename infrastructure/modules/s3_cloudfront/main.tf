@@ -91,7 +91,7 @@ resource "aws_cloudfront_distribution" "this" {
     response_code         = 200
     response_page_path    = "/index.html"
   }
-  
+
   custom_error_response {
     error_caching_min_ttl = 300
     error_code            = 404

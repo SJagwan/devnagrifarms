@@ -1,0 +1,3 @@
+# Local tfvars
+*.auto.tfvars
+secrets.auto.tfvars

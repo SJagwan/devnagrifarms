@@ -67,3 +67,12 @@ module "s3_uploads" {
   environment          = var.environment
   cors_allowed_origins = ["*"] # Consider restricting to your exact frontend domain in production
 }
+
+module "eventbridge_cron" {
+  source              = "../../modules/eventbridge_cron"
+  project_name        = var.project_name
+  environment         = var.environment
+  api_domain          = module.frontend.cloudfront_domain
+  cron_secret         = var.cron_secret
+  schedule_expression = "cron(30 18 * * ? *)" # 18:30 UTC = 00:00 IST
+}

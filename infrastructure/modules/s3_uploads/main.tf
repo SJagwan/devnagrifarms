@@ -19,7 +19,7 @@ resource "aws_s3_bucket_public_access_block" "uploads_public_access" {
 }
 
 resource "aws_s3_bucket_policy" "public_read" {
-  bucket = aws_s3_bucket.uploads.id
+  bucket     = aws_s3_bucket.uploads.id
   depends_on = [aws_s3_bucket_public_access_block.uploads_public_access]
 
   policy = jsonencode({

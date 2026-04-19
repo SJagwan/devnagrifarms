@@ -7,6 +7,7 @@ const walletService = require("./wallet.service");
 const orderService = require("./order.service");
 const AppError = require("../utils/AppError");
 const { SUBSCRIPTION_MIN_BALANCE } = require("../constants/wallet.constants");
+const logger = require("../config/logger");
 
 const createSubscription = async (userId, data) => {
   const transaction = await sequelize.transaction();
@@ -294,7 +295,7 @@ const adminUpdateStatus = async (id, status) => {
 };
 
 const processDailySubscriptions = async () => {
-  console.log("[CRON] Starting Daily Subscription Processing Engine");
+  logger.info("[CRON] Starting Daily Subscription Processing Engine");
 
   const todayStr = new Date().toISOString().split("T")[0];
   const dayOfWeek = new Date().getDay();
@@ -314,7 +315,7 @@ const processDailySubscriptions = async () => {
           null,
           "cancelled",
         );
-        console.log(
+        logger.info(
           `[CRON] Auto-expired Sub ${sub.id} (end_date: ${sub.end_date})`,
         );
         continue;
@@ -332,7 +333,7 @@ const processDailySubscriptions = async () => {
           null,
           "active",
         );
-        console.log(`[CRON] Auto-resumed Sub ${sub.id} (vacation ended)`);
+        logger.info(`[CRON] Auto-resumed Sub ${sub.id} (vacation ended)`);
       }
 
       const startDate = new Date(sub.start_date).toISOString().split("T")[0];
@@ -378,9 +379,6 @@ const processDailySubscriptions = async () => {
           { transaction, lock: transaction.LOCK.UPDATE }
         );
         if (existingOrder) {
-          console.log(
-            `[CRON] Skipping Sub ${sub.id} — already processed for ${todayStr}`,
-          );
           await transaction.rollback();
           skippedCount++;
           continue;
@@ -412,21 +410,20 @@ const processDailySubscriptions = async () => {
 
         await transaction.commit();
         processedCount++;
-        console.log(`[CRON] Processed Sub ${sub.id} for User ${sub.user_id}`);
       } catch (innerErr) {
         await transaction.rollback();
         
         // Handle Race Condition (Idempotency) via database unique constraint
         if (innerErr.name === 'SequelizeUniqueConstraintError') {
-           console.log(`[CRON] Order already exists (caught race condition) for Sub ${sub.id}`);
+           logger.info(`[CRON] Order already exists (caught race condition) for Sub ${sub.id}`);
            skippedCount++;
         } else {
            failedCount++;
-           console.error(`[CRON] Failed Sub ${sub.id}: ${innerErr.message}`);
+           logger.error(`[CRON] Failed Sub ${sub.id}: ${innerErr.message}`);
         }
       }
     } catch (err) {
-      console.error(`[CRON] Error processing sub ${sub.id}:`, err);
+      logger.error(`[CRON] Error processing sub ${sub.id}:`, err);
       failedCount++;
     }
   }

@@ -9,7 +9,13 @@ variable "db_name" {
   type        = string
   default     = "devnagrifarms_staging"
 }
-variable "github_repo" { 
+variable "github_repo" {
   description = "The GitHub repository in format organization/repository (e.g. my-org/my-repo)"
-  default     = "SJagwan/devnagrifarms" 
+  default     = "SJagwan/devnagrifarms"
+}
+
+variable "cron_secret" {
+  description = "Secret used to authenticate the webhook"
+  type        = string
+  sensitive   = true
 }

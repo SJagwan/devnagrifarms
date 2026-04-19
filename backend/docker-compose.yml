@@ -7,3 +7,9 @@ services:
     restart: always
     env_file:
       - .env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: "ap-south-1"
+        awslogs-group: "/ec2/devnagrifarms-staging-backend"
+        awslogs-stream: "backend"
